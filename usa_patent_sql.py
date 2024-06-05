@@ -4,7 +4,6 @@ from tqdm import tqdm
 import pandas as pd
 import os
 from dateutil.parser import parse
-import numpy as np
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
@@ -167,6 +166,161 @@ with tqdm(total=total_chunks, desc="Processing assignees") as pbar:
             ]
         ]
         chunk.drop_duplicates(inplace=True)
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ", ".join([f":{col}" for col in chunk.columns])
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+
+        pbar.update()
+
+
+
+###
+### process assignment
+csv_file = 'patent_assignment.csv'
+
+csv_path = os.path.join(raw_directory, csv_file)
+
+chunk_size = 1000
+
+# Count the total number of rows in the CSV file (excluding the header)
+total_rows = sum(1 for row in open(csv_path)) - 1
+
+# Calculate the total number of chunks
+total_chunks = total_rows // chunk_size
+if total_rows % chunk_size:
+    total_chunks += 1
+
+
+# Specify the table and the primary key columns
+table_name = "patent_assignment"
+primary_key_columns = [
+    "reel_frame",
+    "application_number"
+]  # Composite primary key
+
+with tqdm(total=total_chunks, desc="Processing assignment") as pbar:
+    for chunk in tqdm(
+        pd.read_csv(
+            csv_path,
+            chunksize=chunk_size,
+            dtype="str",
+            usecols=[
+                "reel_no",
+                "frame_no",
+                "patent_doc_number",
+                "patent_kind",
+            ],
+        ),
+        desc="Processing assignment",
+    ):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['patent_kind']=='X0']
+        chunk['reel_frame'] = chunk.apply(lambda row: str(row['reel_no']) + '-' + str(row['frame_no']), axis=1)
+        chunk.rename(columns={'patent_doc_number':'application_number'}, inplace=True)
+        chunk = chunk[
+            [
+                "reel_frame",
+                "application_number"
+            ]
+        ]
+        chunk.drop_duplicates(inplace=True)
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ", ".join([f":{col}" for col in chunk.columns])
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO NOTHING
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+
+        pbar.update()
+
+
+
+### process patent
+
+cols = ['reel_no', 'frame_no', 'patent_title', 'patent_doc_number', 'patent_kind', 'patent_date']
+
+df = pd.read_csv('/home/rli/uspto/patent_assignment.csv', usecols=cols, dtype=str)
+df['reel_frame'] = df.apply(lambda row: str(row['reel_no']) + '-' + str(row['frame_no']), axis=1)
+
+df1 = df[df['patent_kind']=='X0']
+df1 = df1[['reel_frame', 'patent_title', 'patent_doc_number', 'patent_date']]
+df1['patent_url'] = df1['patent_doc_number'].apply(lambda x: f'https://assignment.uspto.gov/patent/index.html#/patent/search/resultAbstract?id={x}&type=applNum')
+df1.rename(columns={'patent_doc_number':'application_number', 'patent_date':'application_date'}, inplace=True)
+
+df2 = df[df['patent_kind'].isin(['B2','B1'])]
+df2 = df2[['reel_frame', 'patent_doc_number', 'patent_date']]
+df2.rename(columns={'patent_doc_number':'patent_number'}, inplace=True)
+
+df3 = df[df['patent_kind']=='A1']
+df3 = df3[['reel_frame', 'patent_doc_number', 'patent_date']]
+df3.rename(columns={'patent_doc_number':'publication_number', 'patent_date':'publication_date'}, inplace=True)
+
+
+df = df1.merge(df2, on='reel_frame', how='left').merge(df3, on='reel_frame', how='left')
+
+df.drop_duplicates(subset=['application_number'], inplace=True)
+df = df[['patent_title', 'application_number', 'application_date', 'patent_url', 'patent_number', 'patent_date', 'publication_number', 'publication_date']]
+df.to_csv('/home/rli/uspto/patent.csv', index=False)
+
+
+### process patent
+csv_file = 'patent.csv'
+
+csv_path = os.path.join(raw_directory, csv_file)
+
+chunk_size = 1000
+
+# Count the total number of rows in the CSV file (excluding the header)
+total_rows = sum(1 for row in open(csv_path)) - 1
+
+# Calculate the total number of chunks
+total_chunks = total_rows // chunk_size
+if total_rows % chunk_size:
+    total_chunks += 1
+
+
+# Specify the table and the primary key columns
+table_name = "patent"
+primary_key_columns = [
+    "application_number"
+]  # Composite primary key
+update_columns = ["application_date", "publication_number", "publication_date", "patent_number", "patent_date", "patent_title", "patent_url"]  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing patent") as pbar:
+    for chunk in tqdm(
+        pd.read_csv(
+            csv_path,
+            chunksize=chunk_size,
+            dtype="str",
+        ),
+        desc="Processing patent",
+    ):
+        chunk = chunk.copy()
+        chunk['application_date'] = chunk['application_date'].apply(lambda x : convert_to_unified_format(str(x)))
+        chunk['publication_date'] = chunk['publication_date'].apply(lambda x : convert_to_unified_format(str(x)))
+        chunk['patent_date'] = chunk['patent_date'].apply(lambda x : convert_to_unified_format(str(x)))
+        chunk.fillna('', inplace=True)
+        chunk.loc[chunk['application_date']=='' , 'application_date'] = None
+        chunk.loc[chunk['publication_date']=='' , 'publication_date'] = None
+        chunk.loc[chunk['patent_date']=='' , 'patent_date'] = None
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ", ".join([f":{col}" for col in chunk.columns])
