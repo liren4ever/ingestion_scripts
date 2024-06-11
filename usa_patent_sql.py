@@ -1,12 +1,61 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
-import pandas as pd
 import os
 from dateutil.parser import parse
+from postal.parser import parse_address
+import pycountry
+import us
+
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
+
+df = pd.read_csv('/home/rli/uspto/patent_assignee.csv', dtype='str')
+
+def country_name_to_alpha3(country_name):
+    try:
+        country = pycountry.countries.get(name=country_name)
+        return country.alpha_3
+    except AttributeError:
+        return None
+    
+def state_name_to_abbrev(state_name):
+    state = us.states.lookup(state_name)
+    if state:
+        return state.abbr
+    return state_name
+
+df['address'] = df.apply(lambda x : ', '.join([str(i) for i in [x['street'], x['street1'], x['city'],x['province'], x['postalCode']] if pd.notna(i)]), axis=1)
+
+df.drop(columns=['street', 'street1', 'city', 'province', 'postalCode'], inplace=True)
+
+df['address_en'] = df['address'].apply(lambda x : parse_address(x))
+
+df['city'] = df['address_en'].apply(lambda x : {addr_type: addr_value for addr_value, addr_type in x})
+
+df['state'] = df['city'].apply(lambda x : x['state'] if 'state' in x else '')
+
+df['postal'] = df['city'].apply(lambda x : x['postcode'] if 'postcode' in x else '')
+
+df['country'] = df['city'].apply(lambda x : x['country'] if 'country' in x else '')
+
+df['city'] = df['city'].apply(lambda x : x['city'] if 'city' in x else '')
+
+df['address_en'] = df['address_en'].apply(lambda x : [(value, label) for value, label in x if label in ['house_number', 'road', 'unit',  'po_box']])
+
+df['address_en'] = df['address_en'].apply(lambda x : {addr_type: addr_value for addr_value, addr_type in x})
+df['address'] = df['address_en'].apply(lambda x : ' '.join(x.values()))
+
+df.drop(columns=['address_en'], inplace=True)
+
+df['state'] = df['state'].apply(lambda x : state_name_to_abbrev(x))
+
+df['country'] = df['country'].apply(lambda x : country_name_to_alpha3(x))
+
+df.rename(columns={'name':'assignee'}, inplace=True)
+
+df.to_csv('/home/rli/uspto/patent_assignee.csv', index=False)
 
 raw_directory = '/home/rli/uspto/'
 

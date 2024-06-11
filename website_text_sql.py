@@ -20,28 +20,30 @@ db_params = {
 }
 
 # Function to upsert a record
-def upsert_record(cur, _url, _trafilatura, _lang, _p_lang, _first_time_check, _last_time_check):
+def upsert_record(cur, _url, _trafilatura, _lang, _p_lang, _first_time_check, _last_time_check, about):
     # SQL query to insert a new record
     query = sql.SQL("""
-        INSERT INTO website_text (url, trafilatura, lang, p_lang, first_time_check, last_time_check)
+        INSERT INTO website_text (url, trafilatura, lang, p_lang, first_time_check, last_time_check, about)
         VALUES (
             %s,
             %s,
             %s,
             %s,
             COALESCE(
-                (SELECT first_time_check FROM website_text WHERE url = %s), 
+                (SELECT first_time_check FROM website_text WHERE url = %s limit 1), 
                 %s
             ),
+            %s,
             %s
         )
+        ON CONFLICT (url, last_time_check) DO NOTHING
     """)
 
     # Execute the query with provided parameters
-    cur.execute(query, (_url, _trafilatura, _lang, _p_lang, _url, _first_time_check, _last_time_check))
+    cur.execute(query, (_url, _trafilatura, _lang, _p_lang, _url, _first_time_check, _last_time_check, about))
 
 # Example DataFrame
-df = pd.read_parquet('/home/rli/scraped_websites.parquet')
+df = pd.read_parquet('/home/rli/euro_website.parquet')
 
 try:
     # Establishing the connection
@@ -50,7 +52,7 @@ try:
 
     # Iterate over the DataFrame and upsert each record with progress bar
     for index, row in tqdm(df.iterrows(), total=df.shape[0], desc="Inserting records"):
-        upsert_record(cur, str(row['url']), str(row['trafilatura']), str(row['lang']), str(row['p_lang']), formatted_date, formatted_date)
+        upsert_record(cur, str(row['url']), str(row['trafilatura']), str(row['lang']), str(row['p_lang']), formatted_date, formatted_date, str(row['about']))
 
     # Commit the transaction
     conn.commit()

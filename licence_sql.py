@@ -1,7 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
-import pandas as pd
 import os
 import re
 from datetime import datetime
@@ -301,7 +300,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         chunk.fillna("", inplace=True)
 
-        chunk = chunk[chunk['alt_business_names'] != ""]
+        chunk = chunk[chunk['alt_business_names_en'] != ""]
 
         chunk.rename(columns={'alt_business_names':'business_name', 'alt_business_names_type': 'name_type'}, inplace=True)
         chunk["start_date"] = None
@@ -480,7 +479,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### activity person
 
 # Specify the table and the primary key columns
-table_name = "registry_person"
+table_name = "licence_person"
 primary_key_columns = [
     "identifier",
     "person_name",
