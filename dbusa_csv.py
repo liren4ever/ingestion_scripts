@@ -4,6 +4,7 @@ from tqdm import tqdm
 import subprocess
 from datetime import datetime
 import sys
+from uuid import uuid5, UUID
 
 file_name = sys.argv[1]
 
@@ -23,6 +24,12 @@ total_rows = int(subprocess.check_output(['wc', '-l', file_path]).split()[0]) - 
 total_chunks = total_rows // chunk_size
 if total_rows % chunk_size:
     total_chunks += 1
+
+
+def identifier_uuid(text):
+    namespace = UUID("00000000-0000-0000-0000-000000000000")
+    uuid = uuid5(namespace, text)
+    return uuid
 
 # Process name
 
@@ -47,6 +54,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Company_Name':'business_name'},inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_name.csv', index=False, header=header, mode='a')
         header = False
@@ -75,6 +83,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Company_Name_Secondary':'business_name'},inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_name.csv', index=False, header=header, mode='a')
 
@@ -108,6 +117,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Physical_Address':'address', 'Physical_Address_City':'city', 'Physical_Address_State':'state', 'Latitude':'latitude', 'Longitude':'longitude', 'Business_Status_Description':'location_status'},inplace=True)
         chunk = chunk[['identifier','address','city','state','postal','country','latitude','longitude','location_type','location_status','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_address.csv', index=False, header=header, mode='a')
         header = False
@@ -145,6 +155,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Mailing_Address':'address', 'Mailing_Address_City':'city', 'Mailing_Address_State':'state'},inplace=True)
         chunk = chunk[['identifier','address','city','state','postal','country','latitude','longitude','location_type','location_status','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_address.csv', index=False, header=header, mode='a')
 
@@ -176,6 +187,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Phone':'phone'},inplace=True)
         chunk = chunk[['identifier','phone','phone_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_phone.csv', index=False, header=header, mode='a')
         header = False
@@ -205,6 +217,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Phone_Secondary':'phone'},inplace=True)
         chunk = chunk[['identifier','phone','phone_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_phone.csv', index=False, header=header, mode='a')
 
@@ -233,6 +246,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Toll_Free':'phone'},inplace=True)
         chunk = chunk[['identifier','phone','phone_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_phone.csv', index=False, header=header, mode='a')
 
@@ -262,6 +276,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Fax':'phone'},inplace=True)
         chunk = chunk[['identifier','phone','phone_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_phone.csv', index=False, header=header, mode='a')
 
@@ -292,6 +307,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Email':'email'},inplace=True)
         chunk = chunk[['identifier','email','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_email.csv', index=False, header=header, mode='a')
         header = False
@@ -325,6 +341,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL':'url'},inplace=True)
         chunk = chunk[['identifier','url','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_url.csv', index=False, header=header, mode='a')
 
@@ -358,6 +375,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_Facebook':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
         header = False
@@ -388,6 +406,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_Yelp':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
 
@@ -417,6 +436,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_Instagram':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
 
@@ -446,6 +466,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_LinkedIN':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
 
@@ -474,6 +495,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_Twitter':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
 
@@ -503,6 +525,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','URL_YouTube':'url'},inplace=True)
         chunk = chunk[['identifier','url','url_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_social.csv', index=False, header=header, mode='a')
 
@@ -536,6 +559,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'SubHQ_ID':'identifier','HQ_ID':'identifier_hq'},inplace=True)
         chunk = chunk[['identifier','identifier_hq','authority','hq_authority','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
+        chunk['identifier_hq'] = chunk['identifier_hq'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_identifier.csv', index=False, header=header, mode='a')
         header = False
@@ -565,6 +590,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','HQ_ID':'identifier_hq'},inplace=True)
         chunk = chunk[['identifier','identifier_hq','authority','hq_authority','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
+        chunk['identifier_hq'] = chunk['identifier_hq'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_identifier.csv', index=False, header=header, mode='a')
 
@@ -593,6 +620,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','EIN':'identifier_hq'},inplace=True)
         chunk = chunk[['identifier','identifier_hq','authority','hq_authority','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_identifier.csv', index=False, header=header, mode='a')
 
@@ -620,6 +648,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Ticker_Symbol':'identifier_hq','Stock_Exchange':'hq_authority'},inplace=True)
         chunk = chunk[['identifier','identifier_hq','authority','hq_authority','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.drop_duplicates(inplace=True)
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_identifier.csv', index=False, header=header, mode='a')
@@ -653,6 +682,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Full_Name':'person_name','Gender':'gender','Source_Title':'title'},inplace=True)
         chunk['gender'] = chunk['gender'].map(genders_map)
         chunk = chunk[['identifier','person_name','gender','title','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_person.csv', index=False, header=header, mode='a')
         header = False
@@ -684,6 +714,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Primary_SIC_4Digit_Code':'category_code','Primary_SIC_4Digit_Description':'category_name'},inplace=True)
         chunk = chunk[['identifier','category_code','category_name','category_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_category.csv', index=False, header=header, mode='a')
         header = False
@@ -712,6 +743,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','NAICS01_Code':'category_code','NAICS01_Description':'category_name'},inplace=True)
         chunk = chunk[['identifier','category_code','category_name','category_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_category.csv', index=False, header=header, mode='a')
 
@@ -743,6 +775,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Location_Sales_Total':'count','Location_Sales_Description':'description'},inplace=True)
         chunk = chunk[['identifier','count','description','currency','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_sales.csv', index=False, header=header, mode='a')
         header = False
@@ -774,6 +807,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Location_Employee_Count':'count','Location_Employee_Description':'description'},inplace=True)
         chunk = chunk[['identifier','count','description','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_emp.csv', index=False, header=header, mode='a')
         header = False
@@ -808,6 +842,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
         header = False
 
@@ -838,6 +873,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -867,6 +903,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -896,6 +933,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -924,6 +962,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -952,6 +991,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -980,6 +1020,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -1007,6 +1048,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Minority_Type':'designation_type'},inplace=True)
         chunk = chunk[['identifier','designation','designation_type','first_time_check','last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk.to_csv('/home/rli/dbusa_data/dbusa_designation.csv', index=False, header=header, mode='a')
 
         pbar.update()

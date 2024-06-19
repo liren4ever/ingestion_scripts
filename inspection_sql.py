@@ -41,7 +41,7 @@ if total_rows % chunk_size:
 ### address processing
 
 # Specify the table and the primary key columns
-table_name = "licence_location"
+table_name = "inspection_location"
 primary_key_columns = [
     "identifier",
     "address",
@@ -215,7 +215,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### name processing
 
 # Specify the table and the primary key columns
-table_name = "licence_name"
+table_name = "inspection_name"
 primary_key_columns = [
     "identifier",
     "business_name",
@@ -341,9 +341,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 ### identifier processing
 
-
 # Specify the table and the primary key columns
-table_name = "licence_identifier"
+table_name = "inspection_identifier"
 primary_key_columns = [
     "identifier",
     "legal_type",
@@ -365,7 +364,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'url':'identifier_url'}, inplace=True)
         chunk = chunk[chunk['legal_type'].notna()]
         chunk['first_time_check'] = file_date
         chunk["last_time_check"] = file_date
@@ -400,12 +398,12 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### activity processing
 
 # Specify the table and the primary key columns
-table_name = "licence_activity"
+table_name = "inspection_activity"
 primary_key_columns = [
     "identifier",
-    "licence_name",
+    "inspection_name",
     "authority",
-    "issued_date"
+    "inspection_date"
 ]  # Composite primary key
 update_columns = ["last_time_check"]  # Columns to update in case of conflict
 
@@ -417,44 +415,39 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
             dtype="str",
             usecols=[
                 "identifier",
-                "licence_number",
-                'Category',
+                "inspection_number",
+                'inspection_name',
                 "authority",
-                "issued_date",
-                "renewed_date",
-                "expired_date",
-                "licence_status",
-                "licence_url",
+                "inspection_date",
+                "inspection_type",
+                "inspection_status",
+                "inspection_url",
             ],
         ),
         desc="Processing chunks",
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'Category':'licence_name'}, inplace=True)
         chunk.fillna("", inplace=True)
 
-        chunk = chunk[chunk['licence_name'] != ""]
+        chunk = chunk[chunk['inspection_name'] != ""]
 
-        chunk['issued_date'] = chunk['issued_date'].replace('', pd.NA)
-        chunk['renewed_date'] = chunk['renewed_date'].replace('', pd.NA)
-        chunk['expired_date'] = chunk['expired_date'].replace('', pd.NA)
+        chunk['inspection_date'] = chunk['inspection_date'].replace('', pd.NA)
         chunk['first_time_check'] = file_date
         chunk["last_time_check"] = file_date
 
         chunk = chunk[
             [
                 "identifier",
-                "licence_number",
-                "licence_name",
+                "inspection_number",
+                'inspection_name',
                 "authority",
-                "issued_date",
-                "renewed_date",
-                "expired_date",
-                "licence_status",
+                "inspection_date",
+                "inspection_type",
+                "inspection_status",
                 "first_time_check",
                 "last_time_check",
-                "licence_url"
+                "inspection_url"
             ]
         ]
         chunk.drop_duplicates(inplace=True)
@@ -479,7 +472,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### activity person
 
 # Specify the table and the primary key columns
-table_name = "licence_person"
+table_name = "inspection_person"
 primary_key_columns = [
     "identifier",
     "person_name"
@@ -539,7 +532,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process industry
 
 # Specify the table and the primary key columns
-table_name = "licence_category"
+table_name = "inspection_category"
 primary_key_columns = ["identifier", "category_code", "category_type"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -572,7 +565,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process phone
 
 # Specify the table and the primary key columns
-table_name = "licence_phone"
+table_name = "inspection_phone"
 primary_key_columns = ["identifier", "phone"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -604,7 +597,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process email
 
 # Specify the table and the primary key columns
-table_name = "licence_email"
+table_name = "inspection_email"
 primary_key_columns = ["identifier", "email"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -635,7 +628,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process website
 
 # Specify the table and the primary key columns
-table_name = "licence_website"
+table_name = "inspection_website"
 primary_key_columns = ["identifier", "url"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 

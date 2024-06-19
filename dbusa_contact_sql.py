@@ -5,6 +5,12 @@ import subprocess
 from datetime import datetime
 import sys
 from sqlalchemy import create_engine, text
+from uuid import uuid5, UUID
+
+def identifier_uuid(text):
+    namespace = UUID("00000000-0000-0000-0000-000000000000")
+    uuid = uuid5(namespace, text)
+    return uuid
 
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
@@ -58,6 +64,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','DBUSA_Executive_ID':'person_identifier', 'Full_Name':'person_name', 'Gender':'gender', 'Source_Title':'title'},inplace=True)
         chunk['gender'] = chunk['gender'].map(genders_map)
         chunk = chunk[[ 'identifier', 'person_identifier', 'person_name', 'gender', 'title', 'first_time_check', 'last_time_check']]
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_name.csv', index=False, header=header, mode='a')
         header = False
@@ -133,6 +141,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Executive_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
         header = False
@@ -160,6 +169,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
 
@@ -187,6 +197,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Cell_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
 
@@ -255,6 +266,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = ''
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
         header = False
@@ -283,6 +295,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = ''
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_02':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
@@ -310,6 +323,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = ''
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_03':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
@@ -337,6 +351,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = ''
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_04':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
@@ -364,6 +379,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = ''
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_05':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
@@ -390,6 +406,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['email_type'] = 'work'
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Email':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
@@ -460,6 +477,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['url_type'] = 'linkedin'
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Executive_LinkedIN':'url'},inplace=True)
         chunk = chunk[['person_identifier', 'url', 'url_type', 'first_time_check', 'last_time_check']]
+        chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
 
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_social.csv', index=False, header=header, mode='a')
         header = False

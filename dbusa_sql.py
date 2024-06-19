@@ -1,7 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
-import subprocess
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
@@ -13,7 +12,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_name.csv'
 chunk_size = 1000000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -54,7 +53,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_address.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -94,7 +93,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_alt_address.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -133,7 +132,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_social.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -173,7 +172,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_designation.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -215,7 +214,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_category.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -257,7 +256,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_emp.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -299,7 +298,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_person.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -341,7 +340,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_phone.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -383,7 +382,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_sales.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -425,7 +424,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_url.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
@@ -467,7 +466,7 @@ csv_path = '/home/rli/dbusa_data/dbusa_identifier.csv'
 chunk_size = 100000
 
 # Count the total number of rows in the CSV file (excluding the header)
-total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
+total_rows = sum(1 for row in open(csv_path)) - 1
 
 # Calculate the total number of chunks
 total_chunks = total_rows // chunk_size
