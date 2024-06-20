@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from uuid import uuid5, UUID
 
 destination_path = '/home/rli/expn_data/'
 
@@ -7,7 +8,10 @@ fl_files = os.listdir(destination_path)
 
 fl_files = [fl for fl in fl_files if fl.endswith('TXT')]
 
-####remove bad escape
+def identifier_uuid(text):
+    namespace = UUID("00000000-0000-0000-0000-000000000000")
+    uuid = uuid5(namespace, text)
+    return uuid
 
 def process_file(file_path):
     # Read the file
@@ -63,6 +67,8 @@ for fl in fl_files:
     file_path = os.path.join(destination_path, fl)
     df = pd.read_csv(file_path, sep='|', dtype='str', on_bad_lines='warn', usecols=cols)
     df.rename(columns=cols_change, inplace=True)
+    df['uuid'] = df['identifier'].apply(lambda x: identifier_uuid(x+'EXPN'))
+    df['uuid_hq'] = df['identifier_hq'].apply(lambda x: identifier_uuid(x+'EXPN'))
     output_path = os.path.join(destination_path, 'expn.csv')
 
     df.to_csv(output_path, index=False, mode='a', header=output_header)
