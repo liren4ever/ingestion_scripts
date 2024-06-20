@@ -89,7 +89,6 @@ primary_key_columns = [
     "address",
     "city",
     "state",
-    "postal",
 ]  # Composite primary key
 update_columns = ["last_time_check"]  # Columns to update in case of conflict
 
@@ -201,7 +200,7 @@ primary_key_columns = ['identifier', 'identifier_hq']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['name', 'uuid', 'uuid_hq', 'legal_type', 'first_time_check']), desc="Processing chunks"):
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq', 'legal_type', 'first_time_check']), desc="Processing chunks"):
         chunk = chunk.copy()
         chunk = chunk[~chunk['identifier_hq'].isna()]
         chunk['last_time_check'] = today
