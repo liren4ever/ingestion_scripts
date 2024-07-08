@@ -126,7 +126,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 "state",
                 "postal",
                 "zip4",
-                "country",
+                "country_code",
                 "latitude",
                 "longitude",
                 "location_status"
@@ -136,6 +136,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     ):
         chunk = chunk.copy()
         chunk.fillna("", inplace=True)
+        chunk.rename(columns={'country_code':'country'}, inplace=True)
         chunk['country'] = chunk['country'].apply(lambda x: 'USA' if x == 'US' else x)
         chunk["postal"] = chunk.apply(lambda x: '-'.join([x["postal"], x["zip4"]]) if x["zip4"] != "" else x["postal"], axis=1)
         chunk.loc[chunk["country"] == "USA", "postal"] = chunk.loc[
@@ -207,7 +208,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['first_time_check'] = today
         chunk['last_time_check'] = today
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
-        chunk = chunk[['identifier', 'phone', 'first_time_check', 'last_time_check']]
+        chunk['phone_type'] = 'work'
+        chunk = chunk[['identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
