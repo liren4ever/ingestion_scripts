@@ -365,7 +365,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'url':'identifier_url'}, inplace=True)
         chunk = chunk[chunk['legal_type'].notna()]
         chunk['first_time_check'] = file_date
         chunk["last_time_check"] = file_date
