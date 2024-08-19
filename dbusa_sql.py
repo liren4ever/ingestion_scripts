@@ -461,3 +461,90 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
+
+
+
+
+### process raw id
+
+csv_path = '/home/rli/dbusa_data/dbusa_identifier_mapping.csv'
+chunk_size = 100000
+
+# Count the total number of rows in the CSV file (excluding the header)
+total_rows = sum(1 for row in open(csv_path)) - 1
+
+# Calculate the total number of chunks
+total_chunks = total_rows // chunk_size
+if total_rows % chunk_size:
+    total_chunks += 1
+
+##Specify the table and the primary key columns
+table_name = "consolidated_identifier_mapping"
+primary_key_columns = ['identifier', 'raw_id', 'raw_authority']  # Composite primary key
+
+
+with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'uuid']), desc="Processing identifier mapping chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['identifier'].notna()]
+        chunk = chunk[chunk['uuid']!='uuid']
+        chunk.rename(columns={'identifier':'raw_id'}, inplace=True)
+        chunk.rename(columns={'uuid':'identifier'}, inplace=True)
+        chunk['raw_authority'] = 'DBUSA'
+        chunk = chunk[['identifier', 'raw_id', 'raw_authority']]
+        chunk.drop_duplicates(inplace=True)
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO NOTHING
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+
+
+## process alternative identifier
+
+csv_path = '/home/rli/dbusa_data/dbusa_alternative_identifier.csv'
+chunk_size = 100000
+
+# Count the total number of rows in the CSV file (excluding the header)
+total_rows = sum(1 for row in open(csv_path)) - 1
+
+# Calculate the total number of chunks
+total_chunks = total_rows // chunk_size
+if total_rows % chunk_size:
+    total_chunks += 1
+
+##Specify the table and the primary key columns
+table_name = "consolidated_alternative_identifier"
+primary_key_columns = ['identifier', 'alternative_identifier', 'alternative_authority']  # Composite primary key
+
+
+with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'alternative_identifier', 'alternative_authority', 'first_time_check', 'last_time_check']), desc="Processing identifier mapping chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['alternative_identifier'].notna()]
+        chunk.drop_duplicates(inplace=True)
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO NOTHING
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()

@@ -13,7 +13,7 @@ connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
 csv_path = '/home/rli/expn_data/expn.csv'
-chunk_size = 1000000
+chunk_size = 100
 
 # Count the total number of rows in the CSV file (excluding the header)
 total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
@@ -1360,3 +1360,40 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
+
+
+
+
+### process expn_search_gui
+from cleanco import basename
+import re
+# Specify the table and the primary key columns
+table_name = 'expn_search_gui'
+primary_key_columns = ['identifier', 'business_name']  # Composite primary key
+update_columns = ["search"]
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk.fillna('', inplace=True)
+        chunk = chunk[chunk['business_name']!='']
+        chunk.rename(columns={'uuid':'identifier'}, inplace=True)
+        chunk['search'] = chunk['business_name'].apply(lambda x : basename(x))
+        chunk['search'] = chunk['search'].apply(lambda x : re.sub(r'[^a-zA-Z0-9]', ' ', x))
+        chunk['search'] = chunk['search'].apply(lambda x : re.sub(r'\s+', ' ', x))
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()        

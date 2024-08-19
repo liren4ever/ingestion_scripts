@@ -1,11 +1,23 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
+import os
+from datetime import datetime
+import sys
+import numpy as np
+
+today = datetime.today().strftime('%Y-%m-%d')
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
-csv_path = '/home/rli/duns_lic_matched.csv'
+
+raw_directory = '/home/rli/'
+
+input_file_name = sys.argv[1]
+
+
+csv_path = os.path.join(raw_directory, input_file_name)
 
 chunk_size = 1000
 
@@ -20,14 +32,9 @@ if total_rows % chunk_size:
 ### address processing
 
 # Specify the table and the primary key columns
-table_name = "duns_licence"
-primary_key_columns = [
-    "duns",
-    "licence",
-]  # Composite primary key
-# update_columns = ["last_time_check"]  # Columns to update in case of conflict
-
-# Define the regex patterns
+table_name = "consolidated_match"
+primary_key_columns = ['identifier_x', 'identifier_y', 'version']  # Composite primary key
+update_columns = ["last_time_check"]  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(
@@ -36,30 +43,30 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
             chunksize=chunk_size,
             dtype="str",
             usecols=[
-                "DUNS_identifier",
-                "identifier",
-                "meta_score",
-                "name_score",
-                "address_score",
-                "city_score",
-                "postal_score",
+                'identifier_x', 'identifier_y', 'name_score', 'address_score', 'city_score', 'postcode_score', 'meta_score'
             ],
         ),
         desc="Processing chunks",
     ):
         chunk = chunk.copy()
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk.where(pd.notnull(chunk), None)
 
-        chunk.rename(columns={'DUNS_identifier': 'duns', 'identifier': 'licence'}, inplace=True)
+        chunk['version'] = 'dl_v1'        
+        
+        chunk['first_time_check'] = '2024-08-14'
+        chunk["last_time_check"] = '2024-08-14'
         chunk = chunk[
             [
-                "duns",
-                "licence",
-                "meta_score",
+                "identifier_x",
+                "identifier_y",
                 "name_score",
                 "address_score",
                 "city_score",
-                "postal_score",
+                "postcode_score",
+                "meta_score",
+                "version",
+                "first_time_check",
+                "last_time_check",
             ]
         ]
         chunk.drop_duplicates(inplace=True)
@@ -70,7 +77,8 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         insert_sql = f"""
         INSERT INTO {table_name} ({', '.join(chunk.columns)})
         VALUES ({placeholders})
-        ON CONFLICT DO NOTHING
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
         """
 
         if chunk is not None and not chunk.empty:
