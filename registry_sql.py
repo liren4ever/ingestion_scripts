@@ -1150,29 +1150,20 @@ with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
 ## process alternative identifier
 alternative_column_exists = column_exists('alternative_identifier', csv_path)
 ##Specify the table and the primary key columns
-table_name = "consolidated_alternative_identifier"
-primary_key_columns = ['identifier', 'alternative_identifier', 'alternative_authority']  # Composite primary key
-update_columns = ['last_time_check']
+table_name = "consolidated_identifier_mapping"
+primary_key_columns = ['identifier', 'raw_id', 'raw_authority']  # Composite primary key
 
 used_columns = ['uuid', 'alternative_identifier', 'alternative_authority']
-
-used_columns += valid_columns
 
 if alternative_column_exists:
 
     with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
         for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=used_columns), desc="Processing identifier mapping chunks"):
-            # Add missing columns and fill with a default value if they don't exist
-            for col in desired_columns:
-                if col not in chunk.columns:
-                    chunk[col] = ""  # Initialize with empty strings or NaN
             chunk = chunk.copy()
             chunk = chunk[chunk['alternative_identifier'].notna()]
-            chunk.rename(columns={'uuid':'identifier'}, inplace=True)
-            chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
-            chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
+            chunk.rename(columns={'uuid':'identifier', 'alternative_identifier':'raw_id', 'alternative_authority':'raw_authority'}, inplace=True)
             chunk.drop_duplicates(inplace=True)
-            chunk = chunk[['identifier','alternative_identifier','alternative_authority','first_time_check','last_time_check']]
+            chunk = chunk[['identifier', 'raw_id', 'raw_authority']]
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
             placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
