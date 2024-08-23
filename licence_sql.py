@@ -14,16 +14,6 @@ raw_directory = '/var/rel8ed.to/nfs/share/project_originals/files/files_cooked/'
 
 input_file_name = sys.argv[1]
 
-# files = os.listdir(raw_directory)
-# files = [f for f in files if f.endswith('.csv')]
-# files = [f for f in files if f.startswith(input_file_name)]
-
-# def extract_date(filename):
-#     # Assuming the date is always in the same position in the filename
-#     date_str = filename.split('_')[-1].split('.')[0]  # Splits the string and takes the second last element
-#     return datetime.strptime(date_str, '%Y-%m-%d')
-
-# latest_file = max(files, key=extract_date)
 
 csv_path = os.path.join(raw_directory, input_file_name+'.csv')
 file_date = input_file_name.split('_')[-1].split('.')[0]
