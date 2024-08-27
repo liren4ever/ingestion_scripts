@@ -6,6 +6,10 @@ import phonenumbers
 import validators
 import subprocess
 from datetime import datetime
+import numpy as np
+from cleanco import basename, typesources, matches
+classification_sources = typesources()
+import re
 
 today = datetime.today().strftime('%Y-%m-%d')
 
@@ -13,7 +17,7 @@ connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
 csv_path = '/home/rli/expn_data/expn.csv'
-chunk_size = 100
+chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
 total_rows = int(subprocess.check_output(['wc', '-l', csv_path]).split()[0]) - 1
@@ -23,25 +27,59 @@ total_chunks = total_rows // chunk_size
 if total_rows % chunk_size:
     total_chunks += 1
 
-### process identifier
+### process legal type
 
 # Specify the table and the primary key columns
-table_name = 'expn_identifier'
+table_name = 'consolidated_legal_type'
+primary_key_columns = ['identifier']  # Composite primary key
+update_columns = ['legal_type']  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing identifier chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
+        chunk['legal_type'] = chunk['business_name'].apply(lambda x: matches(str(x), classification_sources)[0] if matches(str(x), classification_sources) != [] else '')
+        chunk = chunk[chunk['legal_type']!='']
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk.rename(columns={'uuid':'identifier'}, inplace=True)
+        chunk = chunk[['identifier', 'legal_type']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+### process identifier hierarchy
+
+# Specify the table and the primary key columns
+table_name = 'consolidated_identifier_hierarchy'
 primary_key_columns = ['identifier', 'identifier_hq']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
-legal_types = {'C': 'Corporation', 'P': 'Partnership', 'S': 'Sole Proprietor','G':'Government'}
-
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq', 'legal_type']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing identifier chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq']), desc="Processing chunks"):
         chunk = chunk.copy()
-        chunk = chunk[~chunk['uuid_hq'].isna()]
-        chunk['legal_type'] = chunk['legal_type'].map(legal_types).fillna('')
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk['first_time_check'] = today
         chunk['last_time_check'] = today
         chunk.rename(columns={'uuid':'identifier', 'uuid_hq':'identifier_hq'}, inplace=True)
-        chunk['status'] = ''
-        chunk = chunk[['first_time_check', 'last_time_check', 'identifier', 'identifier_hq', 'legal_type', 'status']]
+        chunk['flag'] = np.where(chunk['identifier'] == chunk['identifier_hq'], True, False)
+        chunk = chunk[['identifier', 'identifier_hq', 'first_time_check', 'last_time_check', 'flag']]
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -63,14 +101,15 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process name
 
 # Specify the table and the primary key columns
-table_name = "expn_name"
+table_name = "consolidated_name"
 primary_key_columns = ["identifier", "business_name"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing name chunks"):
         chunk = chunk.copy()
-        chunk = chunk[~chunk['business_name'].isna()]
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk['name_type'] = 'main'
         chunk['first_time_check'] = today
         chunk['last_time_check'] = today
@@ -97,7 +136,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process address
 
 # Specify the table and the primary key columns
-table_name = "expn_location"
+table_name = "consolidated_location"
 primary_key_columns = [
     "identifier",
     "address",
@@ -113,7 +152,7 @@ usa_pattern = r"^\d{5}(-\d{4})?$"
 canada_pattern = r"^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$"
 
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             csv_path,
@@ -132,10 +171,11 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 "location_status"
             ],
         ),
-        desc="Processing chunks",
+        desc="Processing location chunks",
     ):
         chunk = chunk.copy()
-        chunk.fillna("", inplace=True)
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk.rename(columns={'country_code':'country'}, inplace=True)
         chunk['country'] = chunk['country'].apply(lambda x: 'USA' if x == 'US' else x)
         chunk["postal"] = chunk.apply(lambda x: '-'.join([x["postal"], x["zip4"]]) if x["zip4"] != "" else x["postal"], axis=1)
@@ -151,6 +191,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk["longitude"] = chunk["longitude"].apply(lambda x: "-"+x.lstrip("0") if x != '' else None)
         chunk['first_time_check'] = today
         chunk['last_time_check'] = today
+        chunk['location_type'] = ''
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
         chunk = chunk[
             [
@@ -162,6 +203,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 "country",
                 "latitude",
                 "longitude",
+                "location_type",
                 "location_status",
                 "first_time_check",
                 "last_time_check",
@@ -189,7 +231,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process phone
 
 # Specify the table and the primary key columns
-table_name = "expn_phone"
+table_name = "consolidated_phone"
 primary_key_columns = ["identifier", "phone"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -200,9 +242,11 @@ def is_valid_us_number(number):
     except phonenumbers.phonenumberutil.NumberParseException:
         return False
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'phone']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'phone']), desc="Processing phone chunks"):
         chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk['phone'] = chunk['phone'].apply(lambda x : x if is_valid_us_number(str(x)) else None)
         chunk = chunk[~chunk['phone'].isna()]
         chunk['first_time_check'] = today
@@ -230,14 +274,16 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process website
 
 # Specify the table and the primary key columns
-table_name = "expn_website"
+table_name = "consolidated_website"
 primary_key_columns = ["identifier", "url"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'url']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing website chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'url']), desc="Processing website chunks"):
         chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk['url'] = chunk['url'].apply(lambda x : x.lower().strip() if validators.domain(x) else None)
         chunk = chunk[~chunk['url'].isna()]
         chunk['first_time_check'] = today
@@ -264,7 +310,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 ### process industry
 
 # Specify the table and the primary key columns
-table_name = "expn_category"
+table_name = "consolidated_category"
 primary_key_columns = ["identifier", "category_code", "category_type"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -1275,9 +1321,11 @@ sic_dict = {"0111":"Wheat",
 "9999":"Nonclassifiable Establishments"}
 
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'category_code']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing category chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'category_code']), desc="Processing category chunks"):
         chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk = chunk[chunk['category_code'].notna()]
         chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
         chunk['category_name'] = chunk['category_code'].map(sic_dict)
@@ -1312,10 +1360,11 @@ table_name = 'consolidated_identifier_mapping'
 primary_key_columns = ['identifier', 'raw_id', 'raw_authority']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'uuid']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'uuid']), desc="Processing identifier mapping chunks"):
         chunk = chunk.copy()
-        chunk = chunk[~chunk['identifier'].isna()]
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk.rename(columns={'identifier':'raw_id'}, inplace=True)
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
         chunk['raw_authority'] = 'EXPN'
@@ -1336,10 +1385,11 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         pbar.update()
 
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'identifier_hq', 'uuid_hq']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'identifier_hq', 'uuid_hq']), desc="Processing identifier mapping chunks"):
         chunk = chunk.copy()
-        chunk = chunk[~chunk['identifier_hq'].isna()]
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk = chunk[chunk['identifier'] != chunk['identifier_hq']]
         chunk = chunk[['identifier_hq', 'uuid_hq']]
         chunk.rename(columns={'identifier_hq':'raw_id'}, inplace=True)
@@ -1365,8 +1415,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 
 ### process expn_search_gui
-from cleanco import basename
-import re
+
 # Specify the table and the primary key columns
 table_name = 'expn_search_gui'
 primary_key_columns = ['identifier', 'business_name']  # Composite primary key
@@ -1375,8 +1424,8 @@ update_columns = ["search"]
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing chunks"):
         chunk = chunk.copy()
-        chunk.fillna('', inplace=True)
-        chunk = chunk[chunk['business_name']!='']
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['business_name'].notna()]
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
         chunk['search'] = chunk['business_name'].apply(lambda x : basename(x))
         chunk['search'] = chunk['search'].apply(lambda x : re.sub(r'[^a-zA-Z0-9]', ' ', x))
