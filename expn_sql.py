@@ -34,8 +34,8 @@ table_name = 'consolidated_legal_type'
 primary_key_columns = ['identifier']  # Composite primary key
 update_columns = ['legal_type']  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing identifier chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'business_name']), desc="Processing legal type chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         chunk = chunk[chunk['business_name'].notna()]
@@ -70,11 +70,10 @@ table_name = 'consolidated_identifier_hierarchy'
 primary_key_columns = ['identifier', 'identifier_hq']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing identifier chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq']), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing identifier hierarchy chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq']), desc="Processing identifier hierarchy chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
         chunk['first_time_check'] = today
         chunk['last_time_check'] = today
         chunk.rename(columns={'uuid':'identifier', 'uuid_hq':'identifier_hq'}, inplace=True)

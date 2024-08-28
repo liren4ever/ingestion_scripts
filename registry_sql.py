@@ -457,6 +457,7 @@ with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
 
         pbar.update()
+        
 ### activity processing
 
 # Specify the table and the primary key columns
