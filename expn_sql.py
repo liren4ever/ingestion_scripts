@@ -27,7 +27,7 @@ total_chunks = total_rows // chunk_size
 if total_rows % chunk_size:
     total_chunks += 1
 
-### process legal type
+## process legal type
 
 # Specify the table and the primary key columns
 table_name = 'consolidated_legal_type'
@@ -174,10 +174,9 @@ with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
         chunk.rename(columns={'country_code':'country'}, inplace=True)
         chunk['country'] = chunk['country'].apply(lambda x: 'USA' if x == 'US' else x)
-        chunk["postal"] = chunk.apply(lambda x: '-'.join([x["postal"], x["zip4"]]) if x["zip4"] != "" else x["postal"], axis=1)
+        chunk["postal"] = chunk.apply(lambda x: '-'.join([str(x["postal"]), str(x["zip4"])]) if str(x["zip4"]) != "" else str(x["postal"]), axis=1)
         chunk.loc[chunk["country"] == "USA", "postal"] = chunk.loc[
             chunk["country"] == "USA", "postal"
         ].apply(lambda x: x if bool(re.match(usa_pattern, x)) else "")
@@ -245,7 +244,7 @@ with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'phone']), desc="Processing phone chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
+        chunk = chunk[chunk['phone'].notna()]
         chunk['phone'] = chunk['phone'].apply(lambda x : x if is_valid_us_number(str(x)) else None)
         chunk = chunk[~chunk['phone'].isna()]
         chunk['first_time_check'] = today
@@ -282,7 +281,7 @@ with tqdm(total=total_chunks, desc="Processing website chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'url']), desc="Processing website chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
+        chunk = chunk[chunk['url'].notna()]
         chunk['url'] = chunk['url'].apply(lambda x : x.lower().strip() if validators.domain(x) else None)
         chunk = chunk[~chunk['url'].isna()]
         chunk['first_time_check'] = today
@@ -1324,7 +1323,6 @@ with tqdm(total=total_chunks, desc="Processing category chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'category_code']), desc="Processing category chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
         chunk = chunk[chunk['category_code'].notna()]
         chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
         chunk['category_name'] = chunk['category_code'].map(sic_dict)
@@ -1363,7 +1361,7 @@ with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pb
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'uuid']), desc="Processing identifier mapping chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
+        chunk = chunk[chunk['uuid'].notna()]
         chunk.rename(columns={'identifier':'raw_id'}, inplace=True)
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
         chunk['raw_authority'] = 'EXPN'
@@ -1388,7 +1386,7 @@ with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pb
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'identifier_hq', 'uuid_hq']), desc="Processing identifier mapping chunks"):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk = chunk[chunk['business_name'].notna()]
+        chunk = chunk[chunk['uuid_hq'].notna()]
         chunk = chunk[chunk['identifier'] != chunk['identifier_hq']]
         chunk = chunk[['identifier_hq', 'uuid_hq']]
         chunk.rename(columns={'identifier_hq':'raw_id'}, inplace=True)
