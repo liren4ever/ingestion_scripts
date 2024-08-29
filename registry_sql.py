@@ -645,9 +645,10 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 if phone_column_exists:
     with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
-        for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'phone', 'phone_type']), desc="Processing phone chunks"):
+        for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'phone', 'phone_type']), desc="Processing phone chunks"):
             chunk = chunk.copy()
             chunk = chunk[chunk['phone'].notna()]
+            chunk.rename(columns={'uuid':'identifier'}, inplace=True)
             chunk['first_time_check'] = file_date
             chunk["last_time_check"] = file_date
             chunk = chunk[['identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
@@ -718,9 +719,10 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 if website_column_exists:
     with tqdm(total=total_chunks, desc="Processing website chunks") as pbar:
-        for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'website']), desc="Processing website chunks"):
+        for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'website']), desc="Processing website chunks"):
             chunk = chunk.copy()
             chunk = chunk[chunk['website'].notna()]
+            chunk.rename(columns={'uuid':'identifier'}, inplace=True)
             chunk['first_time_check'] = file_date
             chunk["last_time_check"] = file_date
             chunk.rename(columns={'website':'url'}, inplace=True)
