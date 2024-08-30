@@ -280,8 +280,6 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
 
         pbar.update()
 
-
-
 ### alt_name processing
 
 with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
@@ -529,6 +527,7 @@ primary_key_columns = [
 ]  # Composite primary key
 update_columns = ["last_time_check"]  # Columns to update in case of conflict
 
+
 with tqdm(total=total_chunks, desc="Processing licence chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
@@ -732,6 +731,7 @@ if email_column_exists:
 else:
     print("Email column does not exist in the CSV file. Skipping email processing.")
 
+
 ### process website
 # Specify the table and the primary key columns
 table_name = "consolidated_website"
@@ -746,7 +746,7 @@ if website_column_exists:
         for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'website']), desc="Processing chunks"):
             chunk = chunk.copy()
             chunk = chunk[chunk['website'].notna()]
-            chunk['website'] = chunk['website'].apply(lambda x: x.lower())
+            chunk['website'] = chunk['website'].apply(lambda x: x.lower().replace('www.',''))
             chunk['first_time_check'] = file_date
             chunk["last_time_check"] = file_date
             chunk.rename(columns={'website':'url'}, inplace=True)
@@ -807,6 +807,7 @@ if phone_column_exists:
 else:
     print("Phone column does not exist in the CSV file. Skipping phone processing.")
 
+
 ### process legal type consolidated
 # Specify the table and the primary key columns
 table_name = "consolidated_legal_type"
@@ -854,6 +855,7 @@ with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
 
         pbar.update()
+
 
 # Specify the table and the primary key columns
 table_name = "consolidated_status"
