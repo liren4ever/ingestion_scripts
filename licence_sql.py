@@ -922,47 +922,56 @@ primary_key_columns = [
 ]  # Composite primary key
 update_columns = ["last_time_check"]  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing status chunks") as pbar:
-    for chunk in tqdm(
-        pd.read_csv(
-            csv_path,
-            chunksize=chunk_size,
-            dtype="str",
-            usecols=[
-                "identifier",
-                "business_description",
-            ],
-        ),
-        desc="Processing status chunks",
-    ):
-        chunk = chunk.copy()
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'business_description':'description'}, inplace=True)
-        chunk = chunk[chunk['description'].notna()]
-        chunk['first_time_check'] = file_date
-        chunk["last_time_check"] = file_date
-        chunk = chunk[
-            [
-                "identifier",
-                "description",
-                "first_time_check",
-                "last_time_check",
+
+    
+desc_column_exists = column_exists('business_description', csv_path)
+
+
+if desc_column_exists:
+    with tqdm(total=total_chunks, desc="Processing status chunks") as pbar:
+        for chunk in tqdm(
+            pd.read_csv(
+                csv_path,
+                chunksize=chunk_size,
+                dtype="str",
+                usecols=[
+                    "identifier",
+                    "business_description",
+                ],
+            ),
+            desc="Processing status chunks",
+        ):
+            chunk = chunk.copy()
+            chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+            chunk.rename(columns={'business_description':'description'}, inplace=True)
+            chunk = chunk[chunk['description'].notna()]
+            chunk['first_time_check'] = file_date
+            chunk["last_time_check"] = file_date
+            chunk = chunk[
+                [
+                    "identifier",
+                    "description",
+                    "first_time_check",
+                    "last_time_check",
+                ]
             ]
-        ]
-        chunk.drop_duplicates(inplace=True)
+            chunk.drop_duplicates(inplace=True)
 
-        # Construct the insert statement with ON CONFLICT DO UPDATE
-        placeholders = ", ".join([f":{col}" for col in chunk.columns])
+            # Construct the insert statement with ON CONFLICT DO UPDATE
+            placeholders = ", ".join([f":{col}" for col in chunk.columns])
 
-        insert_sql = f"""
-        INSERT INTO {table_name} ({', '.join(chunk.columns)})
-        VALUES ({placeholders})
-        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
-        {', '.join([f"{col} = excluded.{col}" for col in update_columns])}
-        """
+            insert_sql = f"""
+            INSERT INTO {table_name} ({', '.join(chunk.columns)})
+            VALUES ({placeholders})
+            ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+            {', '.join([f"{col} = excluded.{col}" for col in update_columns])}
+            """
 
-        if chunk is not None and not chunk.empty:
-            with engine.begin() as connection:
-                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+            if chunk is not None and not chunk.empty:
+                with engine.begin() as connection:
+                    connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
 
-        pbar.update()
+            pbar.update()
+
+else:
+    print("Desc column does not exist in the CSV file. Skipping phone processing.")
