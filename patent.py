@@ -101,6 +101,7 @@ for file_date in last_seven_days_list:
             bs_data = BeautifulSoup(data, "xml")
             corp = bs_data.find_all("patent-assignment")
             if len(corp) == 0:
+                print("skipping file: " + file_name)
                 continue
             else:
                 assignee_rows = []
