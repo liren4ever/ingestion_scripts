@@ -95,7 +95,7 @@ if os.path.exists("/var/rel8ed.to/nfs/share/uspto/kumiai_data/trademark_assignme
 header = True
 
 # for file_date in last_seven_days_list:
-for file_date in ['19550103-20231231-01']:
+for file_date in last_seven_days_list:
     file_name = "asb" + file_date + ".xml"
     file_path = os.path.join(raw_data_dir, file_name)
     if os.path.exists(file_path):
