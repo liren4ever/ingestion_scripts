@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, text
 from tqdm import tqdm
 import os
 import re
-from datetime import datetime
 import sys
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
