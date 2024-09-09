@@ -17,8 +17,6 @@ import unicodedata
 from cleanco import basename
 from uuid import uuid5, UUID
 
-today = datetime.today()
-
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
@@ -80,9 +78,10 @@ last_seven_days_list = []
 today = datetime.today()
 
 # Generate the last 7 days' dates 249
-last_seven_days_list = [(today - timedelta(days=i)).strftime('%y%m%d') for i in range(2,249)]
+# last_seven_days_list = [(today - timedelta(days=i)).strftime('%y%m%d') for i in range(2,3)]
+last_seven_days_list = ['18840407-20231231-'+str(i).zfill(2) for i in range(1,76)]
 
-
+today = datetime.today().strftime('%Y-%m-%d')
 
 # Download the patent data for the last 7 days and extract them
 for file_date in last_seven_days_list:
@@ -112,8 +111,8 @@ if os.path.exists("/var/rel8ed.to/nfs/share/uspto/kumiai_data/trademark_applicat
 
 
 header = True
-# for file_date in last_seven_days_list:
 for file_date in last_seven_days_list:
+# for file_date in last_seven_days_list:
     file_name = "apc" + file_date + ".xml"
     file_path = os.path.join(raw_data_dir, file_name)
     if os.path.exists(file_path):
@@ -144,6 +143,8 @@ for file_date in last_seven_days_list:
                         type_code = get_text_or_empty(ii, "type-code").strip()
                         if type_code == "GS0181":
                             type_text = get_text_or_empty(ii, "text").strip()
+                        else:
+                            type_text = ""
 
 
                     for ii in i.find_all("classification"):
@@ -360,7 +361,7 @@ df['city_en'] = df['city_en'].apply(lambda x : {addr_type: addr_value for addr_v
 df['city_en'] = df['city_en'].apply(lambda x : ' '.join(x.values()))
 df['city_en'] = df['city_en'].apply(lambda x : clean_string(x))
 
-df['business_name'] = df['party_name'].apply(lambda x : re.sub(r'\s+',' ',x).strip())
+df['business_name'] = df['party_name'].apply(lambda x : re.sub(r'\s+',' ',str(x)).strip())
 df['business_name_en'] = df['business_name'].apply(lambda x : basename(x))
 df['business_name_en'] = df['business_name_en'].apply(lambda x : clean_string(x))
 
@@ -413,6 +414,9 @@ with tqdm(total=total_chunks, desc="Processing trademark") as pbar:
         chunk = chunk[~chunk['business_name_en'].isna()]
         chunk.rename(columns={'city_en':'city', 'region_code':'state'}, inplace=True)
         chunk.fillna('', inplace=True)
+        chunk.loc[chunk["transaction_date"] == "", "transaction_date"] = None
+        chunk.loc[chunk["filing_date"] == "", "filing_date"] = None
+        chunk.loc[chunk["status_date"] == "", "status_date"] = None
         chunk['trademark_url'] = 'https://tsdr.uspto.gov/#caseNumber='+chunk['serial_number']+'&caseSearchType=US_APPLICATION&caseType=DEFAULT&searchType=statusSearch'
         chunk = chunk[
             [
@@ -487,6 +491,8 @@ with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
         chunk["longitude"] = None
         chunk['location_type'] = 'principal'
         chunk['location_status'] = None
+        chunk.loc[chunk["first_time_check"] == "", "first_time_check"] = today
+        chunk.loc[chunk["last_time_check"] == "", "last_time_check"] = today
         chunk = chunk[
             [
                 "identifier",
@@ -551,6 +557,8 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
         chunk['end_date'] = None
         chunk['name_type'] = 'main'
         chunk.rename(columns={'filing_date':'first_time_check', 'transaction_date':'last_time_check'}, inplace=True)
+        chunk.loc[chunk["first_time_check"] == "", "first_time_check"] = today
+        chunk.loc[chunk["last_time_check"] == "", "last_time_check"] = today
         # Additional processing here
         chunk.replace('', None, inplace=True)  # Convert empty strings back to NaN
         chunk = chunk[
