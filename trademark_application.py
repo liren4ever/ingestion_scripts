@@ -78,8 +78,8 @@ last_seven_days_list = []
 today = datetime.today()
 
 # Generate the last 7 days' dates 249
-# last_seven_days_list = [(today - timedelta(days=i)).strftime('%y%m%d') for i in range(2,3)]
-last_seven_days_list = ['18840407-20231231-'+str(i).zfill(2) for i in range(1,76)]
+last_seven_days_list = [(today - timedelta(days=i)).strftime('%y%m%d') for i in range(2,3)]
+# last_seven_days_list = ['18840407-20231231-'+str(i).zfill(2) for i in range(1,76)]
 
 today = datetime.today().strftime('%Y-%m-%d')
 
