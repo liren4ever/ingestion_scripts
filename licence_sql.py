@@ -6,6 +6,7 @@ import re
 import sys
 import string
 
+
 translator = str.maketrans('', '', string.punctuation)
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
