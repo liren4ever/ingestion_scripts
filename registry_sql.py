@@ -3,8 +3,10 @@ from sqlalchemy import create_engine, text
 from tqdm import tqdm
 import os
 import re
-from datetime import datetime
 import sys
+import string
+
+translator = str.maketrans('', '', string.punctuation)
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
@@ -47,6 +49,52 @@ available_columns = df.columns
 desired_columns = ['first_time_check', 'last_time_check']  # Replace with your column names
 valid_columns = [col for col in desired_columns if col in available_columns]
 
+
+### process gui search
+# Specify the table and the primary key columns
+table_name = "consolidated_search_gui"
+primary_key_columns = [
+    "identifier",
+    "business_name",
+]  # Composite primary key
+update_columns = ["search"]  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing") as pbar:
+    for chunk in tqdm(
+        pd.read_csv(
+            csv_path,
+            chunksize=chunk_size,
+            dtype="str",
+            usecols=[
+                "identifier",
+                "business_name",
+                "business_name_en",
+            ],
+        ),
+        desc="Processing",
+    ):
+        chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk.rename(columns={'business_name_en': 'search'}, inplace=True)
+        chunk = chunk[~chunk['search'].isna()]
+        chunk['search'] = chunk['search'].str.translate(translator)
+        chunk.drop_duplicates(inplace=True)
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ", ".join([f":{col}" for col in chunk.columns])
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+
+        pbar.update()
 
 ### address processing
 
