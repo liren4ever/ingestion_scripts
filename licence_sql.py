@@ -128,6 +128,7 @@ with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         chunk.fillna("", inplace=True)
+        chunk = chunk[chunk['identifier'] != ""]
 
         chunk.rename(columns={'address_en': 'address', 'region_code': 'state', 'postal_code': 'postal', 'country_code': 'country', "lon":"longitude", "lat":"latitude", "address_type":"location_type"}, inplace=True)
         
