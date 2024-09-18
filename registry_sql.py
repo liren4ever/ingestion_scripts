@@ -66,7 +66,7 @@ with tqdm(total=total_chunks, desc="Processing") as pbar:
             chunksize=chunk_size,
             dtype="str",
             usecols=[
-                "identifier",
+                "uuid",
                 "business_name",
                 "business_name_en",
             ],
@@ -75,7 +75,7 @@ with tqdm(total=total_chunks, desc="Processing") as pbar:
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'business_name_en': 'search'}, inplace=True)
+        chunk.rename(columns={'business_name_en': 'search', 'uuid':'identifier'}, inplace=True)
         chunk = chunk[~chunk['search'].isna()]
         chunk['search'] = chunk['search'].str.translate(translator)
         chunk.drop_duplicates(inplace=True)
