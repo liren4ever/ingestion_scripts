@@ -1025,3 +1025,39 @@ if desc_column_exists:
 
 else:
     print("Desc column does not exist in the CSV file. Skipping phone processing.")
+
+
+## process alternative identifier
+alternative_column_exists = column_exists('alternative_identifier', csv_path)
+##Specify the table and the primary key columns
+table_name = "consolidated_identifier_mapping"
+primary_key_columns = ['identifier', 'raw_id', 'raw_authority']  # Composite primary key
+
+used_columns = ['identifier', 'alternative_identifier', 'alternative_authority']
+
+if alternative_column_exists:
+
+    with tqdm(total=total_chunks, desc="Processing identifier mapping chunks") as pbar:
+        for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=used_columns), desc="Processing identifier mapping chunks"):
+            chunk = chunk.copy()
+            chunk = chunk[chunk['alternative_identifier'].notna()]
+            chunk.rename(columns={ 'alternative_identifier':'raw_id', 'alternative_authority':'raw_authority'}, inplace=True)
+            chunk.drop_duplicates(inplace=True)
+            chunk = chunk[['identifier', 'raw_id', 'raw_authority']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+            placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+            insert_sql = f"""
+            INSERT INTO {table_name} ({', '.join(chunk.columns)})
+            VALUES ({placeholders})
+            ON CONFLICT ({', '.join(primary_key_columns)}) DO NOTHING
+            """
+
+            if chunk is not None and not chunk.empty:
+                with engine.begin() as connection:
+                    connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+            pbar.update()
+
+else:
+    print("Alternative column does not exist in the CSV file. Skipping Alternative processing.")
