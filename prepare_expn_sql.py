@@ -1,12 +1,14 @@
 import os
 import pandas as pd
 from uuid import uuid5, UUID
+import tarfile
 
-destination_path = '/home/rli/expn_data/'
 
-fl_files = os.listdir(destination_path)
-
-fl_files = [fl for fl in fl_files if fl.endswith('TXT')]
+# Function to untar files
+def untar_file(tar_path, extract_path):
+    with tarfile.open(tar_path, 'r') as tar:
+        tar.extractall(path=extract_path)
+        print(f"Extracted {tar_path} to {extract_path}")
 
 def identifier_uuid(text):
     namespace = UUID("00000000-0000-0000-0000-000000000000")
@@ -30,9 +32,29 @@ def process_file(file_path):
         except UnicodeDecodeError:
             continue
 
+# Directory paths
+data_dir = '/home/rli/expn_data/'
+extract_dir = '/home/rli/expn_data/extracted/'
+
+# Ensure the extract directory exists
+os.makedirs(extract_dir, exist_ok=True)
+
+# List and untar files
+files = os.listdir(data_dir)
+tar_files = [f for f in files if f.endswith('.gz')]
+
+for tar_file in tar_files:
+    tar_path = os.path.join(data_dir, tar_file)
+    untar_file(tar_path, extract_dir)
+
+
+# Process files
+fl_files = os.listdir(extract_dir)
+
+fl_files = [fl for fl in fl_files if fl.endswith('TXT')]
 
 for fl in fl_files:
-    file_path = os.path.join(destination_path, fl)
+    file_path = os.path.join(extract_dir, fl)
     process_file(file_path)
     print(file_path)
 
@@ -42,7 +64,7 @@ output_header = True
 
 length = len(fl_files)
 
-cols = ["BUSINESS NAME","EXPERIAN BUSINESS ID","PBIN (BRANCH BIN)","ADDRESS","CITY","STATE","ZIP CODE","ZIP PLUS 4","COUNTRY CODE","PHONE NUMBER","GEO CODE LATITUDE","GEO CODE LONGITUDE","LOCATION CODE","PRIMARY SIC CODE - 4 DIGIT (DMO013)","BUSINESS TYPE CODE (DMO003)","URL","COUNTRY CODE"]
+cols = ["BUSINESS NAME","EXPERIAN BUSINESS ID","PBIN (BRANCH BIN)","ADDRESS","CITY","STATE","ZIP CODE","ZIP PLUS 4","COUNTRY CODE","PHONE NUMBER","GEO CODE LATITUDE","GEO CODE LONGITUDE","LOCATION CODE","PRIMARY SIC CODE - 4 DIGIT (DMO013)","BUSINESS TYPE CODE (DMO003)","LAST ACTIVITY AGE CODE","URL","COUNTRY CODE"]
 
 cols_change = {
     "BUSINESS NAME":"business_name",
@@ -59,17 +81,18 @@ cols_change = {
     "LOCATION CODE":"location_status",
     "PRIMARY SIC CODE - 4 DIGIT (DMO013)":"category_code",
     "BUSINESS TYPE CODE (DMO003)":"legal_type",
+    "LAST ACTIVITY AGE CODE":"status",
     "URL":"url",
     "COUNTRY CODE":"country_code"
 }
 
 for fl in fl_files:
-    file_path = os.path.join(destination_path, fl)
+    file_path = os.path.join(extract_dir, fl)
     df = pd.read_csv(file_path, sep='|', dtype='str', on_bad_lines='warn', usecols=cols)
     df.rename(columns=cols_change, inplace=True)
     df['uuid'] = df['identifier'].apply(lambda x: identifier_uuid(x+'EXPN'))
     df['uuid_hq'] = df['identifier_hq'].apply(lambda x: identifier_uuid(x+'EXPN'))
-    output_path = os.path.join(destination_path, 'expn.csv')
+    output_path = os.path.join(extract_dir, 'expn.csv')
 
     df.to_csv(output_path, index=False, mode='a', header=output_header)
 
@@ -77,3 +100,4 @@ for fl in fl_files:
 
     length -= 1
     print(length, fl)
+    os.remove(file_path)
