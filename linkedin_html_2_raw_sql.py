@@ -5,6 +5,8 @@ import glob
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
+today = pd.Timestamp("today").strftime("%Y-%m-%d")
+
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
@@ -119,7 +121,7 @@ table_name = "linkedin_raw"
 primary_key_columns = [
     "linkedin_url",
 ]  # Composite primary key
-update_columns = ['business_name', 'organization_type', 'about_us', 'nb_of_employees', 'slogan', 'url', 'hq_location_type', 'hq_street', 'hq_city', 'hq_region', 'hq_postal', 'hq_country', 'locations', 'industry', 'nb_of_followers', 'specialties', 'employees', 'titles', 'similar_pages']  # Columns to update in case of conflict
+update_columns = ['business_name', 'organization_type', 'about_us', 'nb_of_employees', 'slogan', 'url', 'hq_location_type', 'hq_street', 'hq_city', 'hq_region', 'hq_postal', 'hq_country', 'locations', 'industry', 'nb_of_followers', 'specialties', 'employees', 'titles', 'similar_pages', 'last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing Linkedin") as pbar:
     for chunk in tqdm(
@@ -135,6 +137,8 @@ with tqdm(total=total_chunks, desc="Processing Linkedin") as pbar:
         chunk['nb_of_followers'] = chunk['nb_of_followers'].str.replace('follower','').replace(',','').str.strip()
         chunk['nb_of_employees'] = chunk['nb_of_employees'].str.replace(',','').str.strip()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
 
         chunk.drop_duplicates(inplace=True)
 
