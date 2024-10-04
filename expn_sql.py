@@ -16,7 +16,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
-csv_path = '/home/rli/expn_data/expn.csv'
+csv_path = '/home/rli/expn_data/extracted/expn.csv'
 chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
@@ -45,6 +45,40 @@ with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
         chunk['last_time_check'] = today
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
         chunk = chunk[['identifier', 'legal_type']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+### process consolidated_status
+status_dict = {'A':'0 - 3 Months', 'B':'3 - 6 Months', 'C':'6 - 9 Months', 'D':'9 - 12 Months', 'E':'12 - 18 Months', 'F':'18 - 24 Months', 'G':'3 Years', 'H':'4 Years', 'I':'5 Years', 'J':'6 Years', 'K':'7 Years', 'L':'8 Years', 'M':'9 Years', 'N':'10 Years', 'O':'11 Years'}
+
+table_name = 'consolidated_status'
+primary_key_columns = ['identifier', 'status']  # Composite primary key
+update_columns = ['status']  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing status chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'status']), desc="Processing status chunks"):
+        chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk = chunk[chunk['status'].notna()]
+        chunk['status'] = chunk['status'].map(status_dict)
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk.rename(columns={'uuid':'identifier'}, inplace=True)
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
