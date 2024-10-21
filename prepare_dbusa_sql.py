@@ -37,7 +37,7 @@ cols = ['DBUSA_Business_ID','Company_Name']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -65,7 +65,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','Company_Name_Secondary']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -96,7 +96,7 @@ cols = ['DBUSA_Business_ID','Physical_Address','Physical_Address_City','Physical
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing address chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -131,7 +131,7 @@ state_abbrev = {'AK':'USA', 'AL':'USA', 'AR':'USA', 'AS':'USA', 'AZ':'USA', 'CA'
 cols = ['DBUSA_Business_ID','Mailing_Address','Mailing_Address_City','Mailing_Address_State','Mailing_Address_Zip','Mailing_Address_Zip4']
 
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing address chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -168,7 +168,7 @@ cols = ['DBUSA_Business_ID','Phone']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -198,7 +198,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','Phone_Secondary']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -227,7 +227,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','Toll_Free']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing phone chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -257,7 +257,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','Fax']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing fax chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -289,7 +289,7 @@ cols = ['DBUSA_Business_ID','Email']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing email chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -322,7 +322,7 @@ cols = ['DBUSA_Business_ID','URL']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing website chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -356,7 +356,7 @@ cols = ['DBUSA_Business_ID','URL_Facebook']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing facebook chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -387,7 +387,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','URL_Yelp']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing yelp chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -417,7 +417,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','URL_Instagram']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing instagram chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -447,7 +447,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','URL_LinkedIN']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing linkedin chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -476,7 +476,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','URL_Twitter']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing twitter chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -506,7 +506,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','URL_YouTube']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing youtube chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -538,7 +538,7 @@ cols = ['SubHQ_ID','HQ_ID']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing hq chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -570,7 +570,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','HQ_ID']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing hq chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -606,7 +606,7 @@ cols = ['DBUSA_Business_ID','EIN']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing ein chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -635,7 +635,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','Ticker_Symbol', 'Stock_Exchange']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing stock chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -668,7 +668,7 @@ genders_map = {'0':'M', 'M':'M', '2':'F', 'F':'F', '3':'U', 'U':'U'}
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing person chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -685,7 +685,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier','Full_Name':'person_name','Gender':'gender','Source_Title':'title'},inplace=True)
-        chunk['gender'] = chunk['gender'].map(genders_map)
+        chunk['gender'] = chunk['gender'].apply(lambda x: genders_map.get(x, 'U'))
         chunk = chunk[['identifier','person_name','gender','title','first_time_check','last_time_check']]
         chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
 
@@ -700,7 +700,7 @@ cols = ['DBUSA_Business_ID','Primary_SIC_4Digit_Code','Primary_SIC_4Digit_Descri
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing sic chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -729,7 +729,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 cols = ['DBUSA_Business_ID','NAICS01_Code','NAICS01_Description']
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing naics chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -761,7 +761,7 @@ cols = ['DBUSA_Business_ID','Location_Sales_Total','Location_Sales_Description']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing sales chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -794,7 +794,7 @@ cols = ['DBUSA_Business_ID','Location_Employee_Count','Location_Employee_Descrip
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing employee chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -826,7 +826,7 @@ cols = ['DBUSA_Business_ID','Female_Owned_Indicator']
 
 header = True
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing female owned chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             file_path,
@@ -842,7 +842,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Female_Owned_Indicator'].notnull()]
         chunk['designation'] = chunk['Female_Owned_Indicator'].apply(lambda x : 'female owned' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -873,7 +873,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Home_Based_Business_Indicator'].notnull()]
         chunk['designation'] = chunk['Home_Based_Business_Indicator'].apply(lambda x : 'home based business' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -903,7 +903,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Small_Business_Indicator'].notnull()]
         chunk['designation'] = chunk['Small_Business_Indicator'].apply(lambda x : 'small business' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -933,7 +933,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Manufacturing_Indicator'].notnull()]
         chunk['designation'] = chunk['Manufacturing_Indicator'].apply(lambda x : 'manufacturing' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -962,7 +962,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Public_Indicator'].notnull()]
         chunk['designation'] = chunk['Public_Indicator'].apply(lambda x : 'public family' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -991,7 +991,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Non_Profit_Indicator'].notnull()]
         chunk['designation'] = chunk['Non_Profit_Indicator'].apply(lambda x : 'non profit' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)
@@ -1020,7 +1020,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['Domestic_Foreign_Owner_Indicator'].notnull()]
         chunk['designation'] = chunk['Domestic_Foreign_Owner_Indicator'].apply(lambda x : 'domestic foreign owner' if x == '1' else '')
         chunk = chunk[chunk['designation']!='']
-        chunk['designation_type'] = ''
+        chunk['designation_type'] = None
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
         chunk.rename(columns={'DBUSA_Business_ID':'identifier'},inplace=True)

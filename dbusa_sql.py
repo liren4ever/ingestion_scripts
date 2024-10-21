@@ -24,11 +24,41 @@ table_name = 'dbusa_name'
 primary_key_columns = ['identifier', 'business_name']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
-    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing name chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk.drop_duplicates(inplace=True)
         chunk.fillna('', inplace=True)
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+# Specify the table and the primary key columns
+table_name = 'consolidated_name'
+primary_key_columns = ['identifier', 'business_name']  # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing name chunks"):
+
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk.drop_duplicates(inplace=True)
+        chunk['start_date'] = None
+        chunk['end_date'] = None
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -68,7 +98,35 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk.drop_duplicates(inplace=True)
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+# Specify the table and the primary key columns
+table_name = 'consolidated_location'
+primary_key_columns = ['identifier', 'address', 'city', 'state']  # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
+
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk.drop_duplicates(inplace=True)
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -108,7 +166,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk.fillna('', inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -148,7 +206,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -190,7 +248,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -232,7 +290,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -274,7 +332,7 @@ update_columns = ['gender', 'last_time_check']  # Columns to update in case of c
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -316,7 +374,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -358,7 +416,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -400,7 +458,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
@@ -442,7 +500,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
-        chunk = chunk.map(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
         chunk = chunk.astype(str)
         chunk.fillna('', inplace=True)
 
