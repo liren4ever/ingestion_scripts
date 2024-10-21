@@ -159,7 +159,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_social'
+table_name = 'consolidated_social'
 primary_key_columns = ['identifier', 'url']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -199,7 +199,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_designation'
+table_name = 'consolidated_designation'
 primary_key_columns = ['identifier', 'designation', 'designation_type']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -207,8 +207,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -241,7 +239,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_category'
+table_name = 'consolidated_category'
 primary_key_columns = ['identifier', 'category_code', 'category_type']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -283,7 +281,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_emp'
+table_name = 'consolidated_emp'
 primary_key_columns = ['identifier', 'count']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -325,7 +323,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_person'
+table_name = 'consolidated_person'
 primary_key_columns = ['identifier', 'person_name']  # Composite primary key
 update_columns = ['gender', 'last_time_check']  # Columns to update in case of conflict
 
@@ -367,7 +365,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_phone'
+table_name = 'consolidated_phone'
 primary_key_columns = ['identifier', 'phone']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -409,7 +407,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_sales'
+table_name = 'consolidated_sales'
 primary_key_columns = ['identifier', 'count']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -451,7 +449,7 @@ if total_rows % chunk_size:
     total_chunks += 1
 
 # Specify the table and the primary key columns
-table_name = 'dbusa_website'
+table_name = 'consolidated_website'
 primary_key_columns = ['identifier', 'url']  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
