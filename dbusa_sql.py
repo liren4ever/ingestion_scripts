@@ -167,7 +167,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk.fillna('', inplace=True)
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -207,7 +207,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -247,9 +247,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -289,9 +287,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -331,9 +327,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -373,9 +367,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -415,9 +407,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -457,9 +447,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -499,9 +487,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.applymap(lambda x: x.replace('www.','').strip() if isinstance(x, str) else x)
-        chunk = chunk.astype(str)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
