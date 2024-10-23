@@ -38,7 +38,7 @@ if total_rows % chunk_size:
 
 # Process name
 
-cols = ['DBUSA_Business_ID','DBUSA_Executive_ID',"Full_Name","Gender","Source_Title"]
+cols = ['DBUSA_Business_ID','DBUSA_Executive_ID',"Full_Name","Gender","Source_Title","Standardized_Title"]
 ##"Executive_Department","Primary_Exec_Indicator","Executive_Level","Exec_Type","Executive_LinkedIN","Executive_Phone","Executive_Email_Verification_Date"]
 
 genders_map = {'0':'M', 'M':'M', '2':'F', 'F':'F', '3':'U', 'U':'U'}
@@ -61,12 +61,12 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk[chunk['DBUSA_Executive_ID'].notnull()]
         chunk['first_time_check'] = file_date
         chunk['last_time_check'] = file_date
-        chunk.rename(columns={'DBUSA_Business_ID':'identifier','DBUSA_Executive_ID':'person_identifier', 'Full_Name':'person_name', 'Gender':'gender', 'Source_Title':'title'},inplace=True)
+        chunk.rename(columns={'DBUSA_Business_ID':'identifier','DBUSA_Executive_ID':'person_identifier', 'Full_Name':'person_name', 'Gender':'gender', 'Source_Title':'title', "Standardized_Title":"standardized_title"},inplace=True)
         chunk['gender'] = chunk['gender'].map(genders_map)
-        chunk = chunk[[ 'identifier', 'person_identifier', 'person_name', 'gender', 'title', 'first_time_check', 'last_time_check']]
+        chunk = chunk[[ 'identifier', 'person_identifier', 'person_name', 'gender', 'title', 'standardized_title', 'first_time_check', 'last_time_check']]
         chunk['identifier'] = chunk['identifier'].apply(lambda x: identifier_uuid(x))
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_name.csv', index=False, header=header, mode='a')
         header = False
         pbar.update()
@@ -88,16 +88,14 @@ if total_rows % chunk_size:
 # Specify the table and the primary key columns
 table_name = 'dbusa_executive'
 primary_key_columns = ['identifier', 'person_identifier']  # Composite primary key
-update_columns = ['gender', 'title', 'last_time_check']  # Columns to update in case of conflict
+update_columns = ['gender', 'title', 'standardized_title', 'last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.copy()
-
         chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
-        chunk.fillna('', inplace=True)
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -142,7 +140,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Executive_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
         header = False
         pbar.update()
@@ -170,7 +168,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -198,7 +196,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Cell_Phone':'phone'},inplace=True)
         chunk = chunk[['person_identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_phone.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -222,7 +220,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
@@ -267,7 +265,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
         header = False
 
@@ -296,7 +294,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_02':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -324,7 +322,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_03':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -352,7 +350,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_04':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -380,7 +378,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Cons_Email_05':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -407,7 +405,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Email':'email'},inplace=True)
         chunk = chunk[['person_identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_email.csv', index=False, header=header, mode='a')
 
         pbar.update()
@@ -432,7 +430,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
-        chunk.fillna('', inplace=True)
+        chunk.drop_duplicates(inplace=True)
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -478,7 +476,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk.rename(columns={'DBUSA_Executive_ID':'person_identifier', 'Executive_LinkedIN':'url'},inplace=True)
         chunk = chunk[['person_identifier', 'url', 'url_type', 'first_time_check', 'last_time_check']]
         chunk['person_identifier'] = chunk['person_identifier'].apply(lambda x: identifier_uuid(x))
-
+        chunk.drop_duplicates(inplace=True)
         chunk.to_csv('/home/rli/dbusa_data/dbusa_executive_social.csv', index=False, header=header, mode='a')
         header = False
 
@@ -505,7 +503,7 @@ update_columns = ['last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
-
+        chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
 
