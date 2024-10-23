@@ -94,7 +94,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str'), desc="Processing chunks"):
 
         chunk = chunk.copy()
-        chunk = chunk.map(lambda x: x.strip() if isinstance(x, str) else x)
+        chunk = chunk.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         chunk.drop_duplicates(inplace=True)
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
