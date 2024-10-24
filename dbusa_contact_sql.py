@@ -450,8 +450,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
 
 # Process social
-
-
 cols = ['DBUSA_Executive_ID',"Executive_LinkedIN"]
 
 header = True
