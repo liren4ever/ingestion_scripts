@@ -2,7 +2,9 @@ import os
 import pandas as pd
 from uuid import uuid5, UUID
 import tarfile
+import sys
 
+new_file_dir = sys.argv[1]
 
 # Function to untar files
 def untar_file(tar_path, extract_path):
@@ -33,8 +35,8 @@ def process_file(file_path):
             continue
 
 # Directory paths
-data_dir = '/home/rli/expn_data/'
-extract_dir = '/home/rli/expn_data/extracted/'
+data_dir = os.path.join('/var/rel8ed.to/nfs/share/expn/', new_file_dir)
+extract_dir = '/var/rel8ed.to/nfs/share/expn/extracted/'
 
 # Ensure the extract directory exists
 os.makedirs(extract_dir, exist_ok=True)
@@ -47,7 +49,6 @@ for tar_file in tar_files:
     tar_path = os.path.join(data_dir, tar_file)
     untar_file(tar_path, extract_dir)
 
-
 # Process files
 fl_files = os.listdir(extract_dir)
 
@@ -57,7 +58,6 @@ for fl in fl_files:
     file_path = os.path.join(extract_dir, fl)
     process_file(file_path)
     print(file_path)
-
 
 
 output_header = True

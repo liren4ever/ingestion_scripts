@@ -1,13 +1,26 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
+from datetime import datetime
+from uuid import uuid5, UUID
+import re
+
+# Function to generate UUID
+def identifier_uuid(text):
+    namespace = UUID("00000000-0000-0000-0000-000000000000")
+    uuid = uuid5(namespace, text)
+    return uuid
+
+
+today = datetime.today().strftime('%Y-%m-%d')
+
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
 
-csv_path = '/home/rli/CanadaRecords_20240408_095917.txt'
-chunk_size = 1000000
+csv_path = '/var/rel8ed.to/nfs/share/duns/can202410/CanadaRecords_20241024_085759.txt'
+chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
 total_rows = sum(1 for row in open(csv_path)) - 1
@@ -21,7 +34,7 @@ if total_rows % chunk_size:
 ### process industry
 
 # Specify the table and the primary key columns
-table_name = "duns_category"
+table_name = "consolidated_category"
 primary_key_columns = ["identifier", "category_code", "category_type"]  # Composite primary key
 update_columns = ['last_time_check']  # Columns to update in case of conflict
 
@@ -1037,16 +1050,526 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'SIC1']), desc="Processing chunks"):
         chunk = chunk.copy()
         chunk.rename(columns={'DUNS':'identifier', 'SIC1': 'category_code'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
         chunk = chunk[chunk['category_code'].notna()]
         chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
         chunk['category_name'] = chunk['category_code'].map(sic_dict)
         chunk = chunk[chunk['category_name'].notna()]
         chunk['category_type'] = 'SIC'
-        chunk['first_time_check'] = '2023-12-20'
-        chunk['last_time_check'] = '2023-12-20'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
         chunk = chunk[['identifier', 'category_code', 'category_name', 'category_type', 'first_time_check', 'last_time_check']]
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'SIC2']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['SIC2'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'SIC2': 'category_code'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk = chunk[chunk['category_code'].notna()]
+        chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
+        chunk['category_name'] = chunk['category_code'].map(sic_dict)
+        chunk = chunk[chunk['category_name'].notna()]
+        chunk['category_type'] = 'SIC'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'category_code', 'category_name', 'category_type', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'SIC3']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['SIC3'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'SIC3': 'category_code'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk = chunk[chunk['category_code'].notna()]
+        chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
+        chunk['category_name'] = chunk['category_code'].map(sic_dict)
+        chunk = chunk[chunk['category_name'].notna()]
+        chunk['category_type'] = 'SIC'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'category_code', 'category_name', 'category_type', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'SIC4']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['SIC4'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'SIC4': 'category_code'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk = chunk[chunk['category_code'].notna()]
+        chunk['category_code'] = chunk['category_code'].apply(lambda x : x[0:4])
+        chunk['category_name'] = chunk['category_code'].map(sic_dict)
+        chunk = chunk[chunk['category_name'].notna()]
+        chunk['category_type'] = 'SIC'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'category_code', 'category_name', 'category_type', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+### process person
+
+# Specify the table and the primary key columns
+table_name = "consolidated_person"
+primary_key_columns = ["identifier", "person_name"] # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'CEO1', 'PrincFirst1', 'PrincSurname1']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['PrincFirst1'].notna()]
+        chunk.fillna('', inplace=True)
+        chunk.rename(columns={'DUNS':'identifier'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['person_name'] = chunk['PrincFirst1'] + ' ' + chunk['PrincSurname1']
+        chunk['title'] = chunk['CEO1'].apply(lambda x : 'CEO' if x != '' else '')
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'person_name', 'title', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'CEO2', 'PrincFirst2', 'PrincSurname2']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['PrincFirst2'].notna()]
+        chunk.fillna('', inplace=True)
+        chunk.rename(columns={'DUNS':'identifier'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['person_name'] = chunk['PrincFirst2'] + ' ' + chunk['PrincSurname2']
+        chunk['title'] = chunk['CEO1'].apply(lambda x : 'CEO' if x != '' else '')
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'person_name', 'title', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'CEO3', 'PrincFirst3', 'PrincSurname3']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['PrincFirst3'].notna()]
+        chunk.fillna('', inplace=True)
+        chunk.rename(columns={'DUNS':'identifier'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['person_name'] = chunk['PrincFirst3'] + ' ' + chunk['PrincSurname3']
+        chunk['title'] = chunk['CEO1'].apply(lambda x : 'CEO' if x != '' else '')
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'person_name', 'title', 'first_time_check', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+### process identifier hq
+
+# Specify the table and the primary key columns
+table_name = "consolidated_identifier_hierarchy"
+primary_key_columns = ["identifier", "identifier_hq"] # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'DomesticHQDUNS']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['DomesticHQDUNS'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'DomesticHQDUNS':'identifier_hq'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['identifier_hq'] = chunk['identifier_hq'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['flag'] = 'f'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['identifier', 'identifier_hq', 'first_time_check', 'last_time_check', 'flag']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+### process phone
+
+# Specify the table and the primary key columns
+table_name = "consolidated_phone"
+primary_key_columns = ["identifier", "phone"] # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+
+with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'Phone']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['Phone'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'Phone':'phone'}, inplace=True)
+        chunk['phone'] = chunk['phone'].apply(lambda x : re.sub(r'\D', '', x))
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['phone_type'] = 'work'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['phone', 'phone_type', 'first_time_check', 'last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+### process name
+
+# Specify the table and the primary key columns
+table_name = "consolidated_name"
+primary_key_columns = ["identifier", "business_name"] # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'PrimaryName']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['PrimaryName'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'PrimaryName':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'main'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'AlternateName']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['AlternateName'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'AlternateName':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'secondary'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'Tradestyle']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['Tradestyle'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'Tradestyle':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'dba'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'TradestyleAltName']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['TradestyleAltName'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'TradestyleAltName':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'dba'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'MostRecentFormerName']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['MostRecentFormerName'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'MostRecentFormerName':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'former'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'SecondMostRecentFormerName']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['SecondMostRecentFormerName'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'SecondMostRecentFormerName':'business_name'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['name_type'] = 'former'
+        chunk['start_date'] = None
+        chunk['end_date'] = None
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['business_name', 'name_type', 'start_date', 'end_date', 'first_time_check','last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+### process location
+
+# Specify the table and the primary key columns
+table_name = "consolidated_location"
+primary_key_columns = ["identifier", "address", "city", "state"] # Composite primary key
+update_columns = ['last_time_check']  # Columns to update in case of conflict
+
+
+with tqdm(total=total_chunks, desc="Processing address chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'PrimaryStreetAddress', 'PostalTown', 'Province', 'PostalCode']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['PrimaryStreetAddress'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'PrimaryStreetAddress':'address', 'PostalTown':'city', 'Province':'state', 'PostalCode':'postal'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['location_type'] = 'primary'
+        chunk['location_status'] = None
+        chunk['latitude'] = None
+        chunk['longitude'] = None
+        chunk['postal'] = chunk['postal'].fillna('').apply(lambda x: x.replace(' ', ''))
+        chunk['country'] = 'CAN'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['address', 'city', 'state', 'postal', 'country', 'latitude', 'longitude','location_type', 'location_status', 'first_time_check', 'last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+
+
+with tqdm(total=total_chunks, desc="Processing address chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', sep='|', usecols=['DUNS', 'MailingAddress', 'MailingAddressTown', 'MailingProvince', 'MailingPostalCode']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[chunk['MailingAddress'].notna()]
+        chunk.rename(columns={'DUNS':'identifier', 'MailingAddress':'address', 'MailingAddressTown':'city', 'MailingProvince':'state', 'MailingPostalCode':'postal'}, inplace=True)
+        chunk['identifier'] = chunk['identifier'].apply(lambda x: str(identifier_uuid(x+'DNB')))
+        chunk['location_type'] = 'mailing'
+        chunk['location_status'] = None
+        chunk['latitude'] = None
+        chunk['longitude'] = None
+        chunk['postal'] = chunk['postal'].fillna('').apply(lambda x: x.replace(' ', ''))
+        chunk['country'] = 'CAN'
+        chunk['first_time_check'] = today
+        chunk['last_time_check'] = today
+        chunk = chunk[['address', 'city', 'state', 'postal', 'country', 'latitude', 'longitude','location_type', 'location_status', 'first_time_check', 'last_time_check', 'identifier']]
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
         insert_sql = f"""
         INSERT INTO {table_name} ({', '.join(chunk.columns)})

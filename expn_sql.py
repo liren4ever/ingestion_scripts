@@ -16,7 +16,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
-csv_path = '/home/rli/expn_data/extracted/expn.csv'
+csv_path = '/var/rel8ed.to/nfs/share/expn/extracted/expn.csv'
 chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
