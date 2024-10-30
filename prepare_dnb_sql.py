@@ -40,8 +40,8 @@ def process_file(file_path):
         file.write(modified_content)
 
 # Directory paths
-data_dir = '/home/rli/dnb_data/'
-extract_dir = '/home/rli/dnb_data/extracted/'
+data_dir = '/var/rel8ed.to/nfs/share/duns/extracted/'
+extract_dir = '/var/rel8ed.to/nfs/share/duns/extracted/'
 
 # Ensure the extract directory exists
 os.makedirs(extract_dir, exist_ok=True)
