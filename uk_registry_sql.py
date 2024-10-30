@@ -11,7 +11,7 @@ today = datetime.today()
 url = f"https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-{today.year}-{today.month:02d}-01.zip"
 # Define the local filename to save the downloaded file
 local_filename = f"BasicCompanyDataAsOneFile-{today.year}-{today.month:02d}-01.zip"
-local_path = os.path.join('/home/rli/uk_data', local_filename)
+local_path = os.path.join('/var/rel8ed.to/nfs/share/uk_company/', local_filename)
 
 # Download the file
 response = requests.get(url, stream=True)
@@ -26,13 +26,13 @@ else:
 # Unzip the file
 
 with zipfile.ZipFile(local_path, 'r') as zip_ref:
-    zip_ref.extractall('/home/rli/uk_data/')
-print(f"Unzipped to: {'/home/rli/uk_data/'}")
+    zip_ref.extractall('/var/rel8ed.to/nfs/share/uk_company/')
+print(f"Unzipped to: {'/var/rel8ed.to/nfs/share/uk_company/'}")
 
 # Define the paths
 csv_filename = local_filename.replace('.zip', '.csv')
-original_file_path = os.path.join('/home/rli/uk_data', csv_filename)
-temp_file_path = os.path.join('/home/rli/uk_data', csv_filename.replace('.csv', '_temp.csv'))
+original_file_path = os.path.join('/var/rel8ed.to/nfs/share/uk_company/', csv_filename)
+temp_file_path = os.path.join('/var/rel8ed.to/nfs/share/uk_company/', csv_filename.replace('.csv', '_temp.csv'))
 
 # Open the original file for reading and the temp file for writing
 with open(original_file_path, 'r', newline='', encoding='utf-8') as original_file, open(temp_file_path, 'w', newline='', encoding='utf-8') as temp_file:
