@@ -1,11 +1,87 @@
+import os
 import pandas as pd
-from sqlalchemy import create_engine, text
-from tqdm import tqdm
 from datetime import datetime
+from uuid import uuid5, UUID
+from cleanco import typesources, matches
+import tarfile
+from sqlalchemy import create_engine, text
 import re
+from tqdm import tqdm
+import psycopg2
 
+classification_sources = typesources()
 
 today = datetime.today().strftime('%Y-%m-%d')
+
+# Function to untar files
+def untar_file(tar_path, extract_path):
+    with tarfile.open(tar_path, 'r') as tar:
+        tar.extractall(path=extract_path)
+        print(f"Extracted {tar_path} to {extract_path}")
+
+# Function to generate UUID
+def identifier_uuid(text):
+    namespace = UUID("00000000-0000-0000-0000-000000000000")
+    uuid = uuid5(namespace, text)
+    return uuid
+
+# Function to process files
+def process_file(file_path):
+    # Read the file
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    # Modify the content
+    modified_content = content.replace('\\,', '').replace('\\"', '').replace('\\', '').replace('"', ' ').replace(',',' ')
+
+    # Write the modified content back to the file
+    with open(file_path, 'w') as file:
+        file.write(modified_content)
+
+# Directory paths
+data_dir = '/var/rel8ed.to/nfs/share/duns/extracted/'
+extract_dir = '/var/rel8ed.to/nfs/share/duns/extracted/'
+
+# Ensure the extract directory exists
+os.makedirs(extract_dir, exist_ok=True)
+
+# List and untar files
+files = os.listdir(data_dir)
+tar_files = [f for f in files if f.endswith('.gz')]
+
+for tar_file in tar_files:
+    tar_path = os.path.join(data_dir, tar_file)
+    untar_file(tar_path, extract_dir)
+
+files = os.listdir(extract_dir)
+length = len(files)
+
+fl_files = [fl for fl in files if fl.endswith('FL')]
+for fl in fl_files:
+    file_path = os.path.join(extract_dir, fl)
+    process_file(file_path)
+    print(file_path)
+
+header = True
+# Read the CSV file
+for file in fl_files:
+    file_path = os.path.join(extract_dir, file)
+    print(file)
+    data = pd.read_csv(file_path, header=None, sep='|', dtype='str', encoding='utf-8')
+    data.columns = ['identifier', 'name', 'address', 'city', 'state', 'postal', 'alt_name', 'country', 'phone', 'location_status', 'identifier_hq']
+    data['uuid'] = data['identifier'].apply(lambda x: identifier_uuid(x+'DNB'))
+    data['uuid_hq'] = data['identifier_hq'].apply(lambda x: identifier_uuid(x+'DNB'))
+    data['legal_type'] = data['name'].apply(lambda x : matches(str(x), classification_sources)[0] if matches(str(x), classification_sources) != [] else '')
+    data['first_time_check'] = today
+    data.to_csv('/var/rel8ed.to/nfs/share/duns/extracted/dnb.csv', index=False, mode='a', header=header)
+    header = False
+    length -= 1
+    print(length, 'files remaining')
+    os.remove(file_path)
+
+print("CSV file created")
+
+####
 
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
@@ -79,6 +155,7 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
+
 
 ### loading name to consolidated_name
 
@@ -317,9 +394,9 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
         chunk = chunk.copy()
         chunk = chunk[chunk['phone'].str.contains(r'\d', na=False)]
         chunk['phone'] = chunk['phone'].str.replace(r'\D', '', regex=True)
+        chunk['phone_type'] = 'work'
         chunk['last_time_check'] = chunk['first_time_check']
         chunk.rename(columns={'uuid':'identifier'}, inplace=True)
-        chunk['phone_type'] = 'work'
         chunk = chunk[['identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -426,3 +503,93 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
+
+
+### update cosolidated tables with new dnb data
+
+# Establish a connection to your PostgreSQL database
+conn = psycopg2.connect(
+    host="10.8.0.110",
+    dbname="rel8ed",
+    user="postgres",
+    password="rel8edpg"
+)
+
+# Create a cursor to perform database operations
+cur = conn.cursor()
+
+# Define the SQL queries
+sql_queries = [
+    """
+    -- First query: get the latest last_time_check
+    WITH check_date AS (
+        SELECT last_time_check
+        FROM duns_identifier
+        ORDER BY last_time_check DESC
+        LIMIT 1
+    )
+    UPDATE duns_identifier
+    SET status = 'Inactive'
+    WHERE last_time_check != (SELECT last_time_check FROM check_date);
+    """,
+    """
+    -- Second query: update location
+    insert into consolidated_location
+    SELECT address, city, state, postal, country, null as latitude, null as longitude, '' as location_type, '' as location_status, first_time_check, last_time_check, identifier 
+    FROM duns_location
+    on conflict do nothing;
+    """,
+    """
+    -- Third query: update name
+    insert into consolidated_name
+    select business_name, name_type, null as start_date, null as end_date, first_time_check, last_time_check, identifier 
+    from duns_name
+    on conflict do nothing; 
+    """,
+    """
+    -- Fourth query: hierarchy
+    insert into consolidated_identifier_hierarchy
+    select identifier, identifier_hq, first_time_check, last_time_check 
+    from duns_identifier
+    where identifier != identifier_hq
+    on conflict do nothing;
+    """,
+    """
+    -- Fourth query: status
+    INSERT INTO consolidated_status (identifier, status, first_time_check, last_time_check)
+    SELECT identifier, status, first_time_check, last_time_check 
+    FROM duns_identifier
+    ON CONFLICT (identifier) 
+    DO UPDATE SET 
+        status = EXCLUDED.status, 
+        last_time_check = EXCLUDED.last_time_check;
+
+    """,
+    """
+    -- Fourth query: legal type
+    insert into consolidated_legal_type
+    select identifier, legal_type
+    from duns_identifier 
+    where legal_type != null or legal_type != '' or legal_type = 'NaN'
+    on conflict do nothing;
+    """,
+]
+
+try:
+    # Execute each SQL query in the list
+    for query in sql_queries:
+        cur.execute(query)
+    
+    # Commit the transaction
+    conn.commit()
+    print("All queries executed successfully.")
+    
+except Exception as e:
+    # Rollback in case of error
+    conn.rollback()
+    print(f"An error occurred: {e}")
+    
+finally:
+    # Close the cursor and the connection
+    cur.close()
+    conn.close()
