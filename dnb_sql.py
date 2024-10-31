@@ -87,7 +87,7 @@ connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
 csv_path = '/var/rel8ed.to/nfs/share/duns/extracted/dnb.csv'
-chunk_size = 100000
+chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
 total_rows = sum(1 for row in open(csv_path)) - 1
@@ -414,13 +414,11 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
         pbar.update()
 
-
 ### loading identifier
-
 # Specify the table and the primary key columns
 table_name = 'duns_identifier'
-primary_key_columns = ['identifier', 'identifier_hq']  # Composite primary key
-update_columns = ['last_time_check']  # Columns to update in case of conflict
+primary_key_columns = ['identifier']  # Composite primary key
+update_columns = ['identifier_hq', 'status', 'last_time_check']  # Columns to update in case of conflict
 
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq', 'legal_type', 'first_time_check']), desc="Processing chunks"):
@@ -443,6 +441,37 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
         if chunk is not None and not chunk.empty:
             with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
+
+        pbar.update()
+
+### loading ownership
+# Specify the table and the primary key columns
+table_name = 'duns_onwership'
+primary_key_columns = ['ownershipid']  # Composite primary key
+
+with tqdm(total=total_chunks, desc="Processing ownership chunks") as pbar:
+    for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq']), desc="Processing chunks"):
+        chunk = chunk.copy()
+        chunk = chunk[~chunk['uuid_hq'].isna()]
+        chunk = chunk[chunk['uuid'] != chunk['uuid_hq']]
+        chunk.drop_duplicates(inplace=True)
+        chunk['last_time_check'] = chunk['first_time_check']
+        chunk.rename(columns={'uuid':'ownedentityid', 'uuid_hq':'ownerentityid'}, inplace=True)
+        chunk = chunk[['ownerentityid', 'ownedentityid', 'last_time_check']]
+
+    # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO NOTHING
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(f"TRUNCATE TABLE {table_name}")
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
@@ -478,7 +507,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
         pbar.update()
 
-
 with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['identifier', 'identifier_hq', 'uuid_hq']), desc="Processing chunks"):
         chunk = chunk.copy()
@@ -503,7 +531,6 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
-
 
 ### update cosolidated tables with new dnb data
 
