@@ -457,8 +457,8 @@ with tqdm(total=total_chunks, desc="Processing ownership chunks") as pbar:
         chunk = chunk[chunk['uuid'] != chunk['uuid_hq']]
         chunk.drop_duplicates(inplace=True)
         chunk['last_time_check'] = chunk['first_time_check']
-        chunk.rename(columns={'uuid':'ownedentityid', 'uuid_hq':'ownerentityid'}, inplace=True)
-        chunk = chunk[['ownerentityid', 'ownedentityid', 'last_time_check']]
+        chunk.rename(columns={'uuid':'owned_entity_id', 'uuid_hq':'owner_entity_id'}, inplace=True)
+        chunk = chunk[['owner_entity_id', 'owned_entity_id', 'last_time_check']]
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -548,7 +548,7 @@ cur = conn.cursor()
 # Define the SQL queries
 sql_queries = [
     """
-    -- First query: get the latest last_time_check
+    -- query: get the latest last_time_check
     WITH check_date AS (
         SELECT last_time_check
         FROM duns_identifier
@@ -560,21 +560,7 @@ sql_queries = [
     WHERE last_time_check != (SELECT last_time_check FROM check_date);
     """,
     """
-    -- Second query: update location
-    insert into consolidated_location
-    SELECT address, city, state, postal, country, null as latitude, null as longitude, '' as location_type, '' as location_status, first_time_check, last_time_check, identifier 
-    FROM duns_location
-    on conflict do nothing;
-    """,
-    """
-    -- Third query: update name
-    insert into consolidated_name
-    select business_name, name_type, null as start_date, null as end_date, first_time_check, last_time_check, identifier 
-    from duns_name
-    on conflict do nothing; 
-    """,
-    """
-    -- Fourth query: hierarchy
+    -- query: hierarchy
     insert into consolidated_identifier_hierarchy
     select identifier, identifier_hq, first_time_check, last_time_check 
     from duns_identifier
@@ -582,7 +568,7 @@ sql_queries = [
     on conflict do nothing;
     """,
     """
-    -- Fourth query: status
+    -- query: status
     INSERT INTO consolidated_status (identifier, status, first_time_check, last_time_check)
     SELECT identifier, status, first_time_check, last_time_check 
     FROM duns_identifier
@@ -593,7 +579,7 @@ sql_queries = [
 
     """,
     """
-    -- Fourth query: legal type
+    -- query: legal type
     insert into consolidated_legal_type
     select identifier, legal_type
     from duns_identifier 
