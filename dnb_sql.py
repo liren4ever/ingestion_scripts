@@ -445,10 +445,11 @@ with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
 
         pbar.update()
 
+
 ### loading ownership
 # Specify the table and the primary key columns
-table_name = 'duns_onwership'
-primary_key_columns = ['ownershipid']  # Composite primary key
+table_name = 'duns_ownership'
+primary_key_columns = ['owned_entity_id','owner_entity_id']  # Composite primary key
 
 with tqdm(total=total_chunks, desc="Processing ownership chunks") as pbar:
     for chunk in tqdm(pd.read_csv(csv_path, chunksize=chunk_size, dtype='str', usecols=['uuid', 'uuid_hq']), desc="Processing chunks"):
@@ -456,7 +457,7 @@ with tqdm(total=total_chunks, desc="Processing ownership chunks") as pbar:
         chunk = chunk[~chunk['uuid_hq'].isna()]
         chunk = chunk[chunk['uuid'] != chunk['uuid_hq']]
         chunk.drop_duplicates(inplace=True)
-        chunk['last_time_check'] = chunk['first_time_check']
+        chunk['last_time_check'] = today
         chunk.rename(columns={'uuid':'owned_entity_id', 'uuid_hq':'owner_entity_id'}, inplace=True)
         chunk = chunk[['owner_entity_id', 'owned_entity_id', 'last_time_check']]
 
@@ -471,14 +472,12 @@ with tqdm(total=total_chunks, desc="Processing ownership chunks") as pbar:
 
         if chunk is not None and not chunk.empty:
             with engine.begin() as connection:
-                connection.execute(f"TRUNCATE TABLE {table_name}")
                 connection.execute(text(insert_sql), chunk.to_dict(orient='records'))
 
         pbar.update()
 
 
 ### loading identifier mapping
-
 # Specify the table and the primary key columns
 table_name = 'consolidated_identifier_mapping'
 primary_key_columns = ['identifier', 'raw_id', 'raw_authority']  # Composite primary key
