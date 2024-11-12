@@ -985,3 +985,97 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
                 connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
 
         pbar.update()
+
+
+
+### address processing
+
+# Specify the table and the primary key columns
+table_name = "registry_location"
+primary_key_columns = [
+    "identifier",
+    "address",
+    "city",
+    "state",
+]  # Composite primary key
+update_columns = ["last_time_check"]  # Columns to update in case of conflict
+
+
+used_columns = ["uuid", "address_en", "city", "region_code", "postal_code", "country_code", "lat", "lon", "address_type"]
+
+used_columns += valid_columns
+# Define the regex patterns
+usa_pattern = r"^\d{5}(-\d{4})?$"
+canada_pattern = r"^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$"
+
+with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
+    for chunk in tqdm(
+        pd.read_csv(
+            csv_path,
+            chunksize=chunk_size,
+            dtype="str",
+            usecols=used_columns,
+        ),
+        desc="Processing location chunks",
+    ):
+        # Add missing columns and fill with a default value if they don't exist
+        for col in desired_columns:
+            if col not in chunk.columns:
+                chunk[col] = ""  # Initialize with empty strings or NaN
+        chunk = chunk.copy()
+        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        chunk.fillna('', inplace=True)
+        chunk.rename(columns={'uuid':'identifier', 'address_en': 'address', 'region_code': 'state', 'postal_code': 'postal', 'country_code': 'country', "lon":"longitude", "lat":"latitude", "address_type":"location_type"}, inplace=True)
+        
+        chunk['city'] = chunk['city'].apply(lambda x: str(x).lower())
+        chunk["postal"] = chunk["postal"].apply(lambda x: str(x).replace(" ", ""))
+        chunk["postal"] = chunk.apply(
+            lambda row: row["postal"].replace(row["state"], ""), axis=1
+        )
+        chunk.loc[chunk["country"] == "USA", "postal"] = chunk.loc[
+            chunk["country"] == "USA", "postal"
+        ].apply(lambda x: x if bool(re.match(usa_pattern, x)) else "")
+        chunk.loc[chunk["country"] == "CAN", "postal"] = chunk.loc[
+            chunk["country"] == "CAN", "postal"
+        ].apply(lambda x: x[0:6])
+        chunk.loc[chunk["country"] == "CAN", "postal"] = chunk.loc[
+            chunk["country"] == "CAN", "postal"
+        ].apply(lambda x: x if bool(re.match(canada_pattern, x)) else "")
+        chunk["state"] = chunk["state"].apply(lambda x: x.upper()[0:2])
+        chunk.loc[chunk["latitude"] == "", "latitude"] = None
+        chunk.loc[chunk["longitude"] == "", "longitude"] = None
+        chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
+        chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
+        chunk = chunk[
+            [
+                "identifier",
+                "address",
+                "city",
+                "state",
+                "postal",
+                "country",
+                "longitude",
+                "latitude",
+                "location_type",
+                "first_time_check",
+                "last_time_check",
+            ]
+        ]
+        chunk = chunk[chunk['location_type']!='officer']
+        chunk.drop_duplicates(inplace=True)
+
+        # Construct the insert statement with ON CONFLICT DO UPDATE
+        placeholders = ", ".join([f":{col}" for col in chunk.columns])
+
+        insert_sql = f"""
+        INSERT INTO {table_name} ({', '.join(chunk.columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+        """
+
+        if chunk is not None and not chunk.empty:
+            with engine.begin() as connection:
+                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+
+        pbar.update()
