@@ -1,3 +1,4 @@
+#!/home/rli/venv/bin/python3
 import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
@@ -5,6 +6,7 @@ import os
 import re
 import sys
 import string
+import numpy as np
 
 translator = str.maketrans('', '', string.punctuation)
 
@@ -59,7 +61,7 @@ primary_key_columns = [
 ]  # Composite primary key
 update_columns = ["search"]  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing") as pbar:
+with tqdm(total=total_chunks, desc="Processing search gui") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             csv_path,
@@ -71,7 +73,7 @@ with tqdm(total=total_chunks, desc="Processing") as pbar:
                 "business_name_en",
             ],
         ),
-        desc="Processing",
+        desc="Processing search gui",
     ):
         chunk = chunk.copy()
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
@@ -172,6 +174,7 @@ with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
             ]
         ]
         chunk = chunk[chunk['location_type']!='officer']
+        chunk.loc[:, ['postal', 'country', 'longitude', 'latitude', 'location_type', 'location_status']] = chunk[['postal', 'country', 'longitude', 'latitude', 'location_type', 'location_status']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -252,6 +255,7 @@ with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
             ]
         ]
         chunk = chunk[chunk['location_type']!='officer']
+        chunk.loc[:, ['postal', 'country', 'longitude', 'latitude', 'location_type', 'location_status']] = chunk[['postal', 'country', 'longitude', 'latitude', 'location_type', 'location_status']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -321,6 +325,7 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
             ]
         ]
         chunk = chunk[chunk['business_name'].str.len() <= 500]
+        chunk.loc[:, ['name_type', 'start_date', 'end_date']] = chunk[['name_type', 'start_date', 'end_date']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -380,6 +385,7 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
             ]
         ]
         chunk = chunk[chunk['business_name'].str.len() <= 500]
+        chunk.loc[:, ['name_type', 'start_date', 'end_date']] = chunk[['name_type', 'start_date', 'end_date']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -460,7 +466,7 @@ used_columns = ["uuid", "registry_status"]
 
 used_columns += valid_columns  # Columns to update in case of conflict
 
-with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
+with tqdm(total=total_chunks, desc="Processing status chunks") as pbar:
     for chunk in tqdm(
         pd.read_csv(
             csv_path,
@@ -468,7 +474,7 @@ with tqdm(total=total_chunks, desc="Processing legal type chunks") as pbar:
             dtype="str",
             usecols=used_columns,
         ),
-        desc="Processing legal type chunks",
+        desc="Processing status chunks",
     ):
         # Add missing columns and fill with a default value if they don't exist
         for col in desired_columns:
@@ -553,6 +559,7 @@ with tqdm(total=total_chunks, desc="Processing activity chunks") as pbar:
                 "registry_url"
             ]
         ]
+        chunk.loc[:, ['registry_url']] = chunk[['registry_url']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -621,6 +628,7 @@ with tqdm(total=total_chunks, desc="Processing person chunks") as pbar:
                 "last_time_check"
             ]
         ]
+        chunk.loc[:, ['title']] = chunk[['title']].replace({pd.NA: None, np.nan: None, '': None})
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
@@ -665,6 +673,7 @@ with tqdm(total=total_chunks, desc="Processing category chunks") as pbar:
         chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
         chunk = chunk[chunk['category_code'].str.isdigit()]
         chunk = chunk[['identifier', 'category_code', 'category_name', 'category_type', 'first_time_check', 'last_time_check']]
+        chunk.loc[:, ['category_name']] = chunk[['category_name']].replace({pd.NA: None, np.nan: None, '': None})        
 
     # Construct the insert statement with ON CONFLICT DO UPDATE
         placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -700,6 +709,7 @@ if phone_column_exists:
             chunk['first_time_check'] = file_date
             chunk["last_time_check"] = file_date
             chunk = chunk[['identifier', 'phone', 'phone_type', 'first_time_check', 'last_time_check']]
+            chunk.loc[:, ['phone_type']] = chunk[['phone_type']].replace({pd.NA: None, np.nan: None, '': None})     
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
             placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
@@ -738,7 +748,7 @@ if email_column_exists:
             chunk['first_time_check'] = file_date
             chunk["last_time_check"] = file_date
             chunk = chunk[['identifier', 'email', 'email_type', 'first_time_check', 'last_time_check']]
-
+            chunk.loc[:, ['email_type']] = chunk[['email_type']].replace({pd.NA: None, np.nan: None, '': None})     
         # Construct the insert statement with ON CONFLICT DO UPDATE
             placeholders = ', '.join([f":{col}" for col in chunk.columns])  # Correct placeholders
             insert_sql = f"""
@@ -858,224 +868,3 @@ if alternative_column_exists:
 
 else:
     print("Alternative column does not exist in the CSV file. Skipping Alternative processing.")
-
-
-# Specify the table and the primary key columns
-table_name = "registry_name"
-primary_key_columns = [
-    "identifier",
-    "business_name",
-]  # Composite primary key
-update_columns = ["last_time_check"] 
-
-used_columns = ["uuid", "business_name", "business_name_type", "business_name_en", "name_start_date", "name_end_date"]
-
-used_columns += valid_columns # Columns to update in case of conflict
-
-with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
-    for chunk in tqdm(
-        pd.read_csv(
-            csv_path,
-            chunksize=chunk_size,
-            dtype="str",
-            usecols=used_columns,
-        ),
-        desc="Processing name chunks",
-    ):
-        # Add missing columns and fill with a default value if they don't exist
-        for col in desired_columns:
-            if col not in chunk.columns:
-                chunk[col] = ""  # Initialize with empty strings or NaN
-        chunk = chunk.copy()
-        chunk.fillna('', inplace=True)
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-
-        chunk = chunk[chunk['business_name_en'] != ""]
-
-        chunk.rename(columns={'uuid':'identifier', 'business_name_type': 'name_type', 'name_start_date':'start_date', 'name_end_date':'end_date'}, inplace=True)
-        chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
-        chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
-        # Additional processing here
-        chunk.replace('', None, inplace=True)  # Convert empty strings back to NaN
-        chunk = chunk[
-            [
-                "identifier",
-                "business_name",
-                "name_type",
-                "start_date",
-                "end_date",
-                "first_time_check",
-                "last_time_check",
-            ]
-        ]
-        chunk = chunk[chunk['business_name'].str.len() <= 500]
-        chunk.drop_duplicates(inplace=True)
-
-        # Construct the insert statement with ON CONFLICT DO UPDATE
-        placeholders = ", ".join([f":{col}" for col in chunk.columns])
-
-        insert_sql = f"""
-        INSERT INTO {table_name} ({', '.join(chunk.columns)})
-        VALUES ({placeholders})
-        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
-        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
-        """
-
-        if chunk is not None and not chunk.empty:
-            with engine.begin() as connection:
-                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
-
-        pbar.update()
-
-### alt_name processing
-
-used_columns = ["uuid", "alt_business_names", "alt_business_names_type", "alt_business_names_en"]
-
-used_columns += valid_columns
-
-with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
-    for chunk in tqdm(
-        pd.read_csv(
-            csv_path,
-            chunksize=chunk_size,
-            dtype="str",
-            usecols=used_columns
-        ),
-        desc="Processing name chunks",
-    ):
-        # Add missing columns and fill with a default value if they don't exist
-        for col in desired_columns:
-            if col not in chunk.columns:
-                chunk[col] = ""  # Initialize with empty strings or NaN
-        chunk = chunk.copy()
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.fillna("", inplace=True)
-        chunk = chunk[chunk['alt_business_names_en'] != ""]
-        chunk.rename(columns={'uuid':'identifier','alt_business_names':'business_name', 'alt_business_names_type': 'name_type'}, inplace=True)
-        chunk['start_date'] = None
-        chunk['end_date'] = None
-        chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
-        chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
-        chunk = chunk[
-            [
-                "identifier",
-                "business_name",
-                "name_type",
-                "start_date",
-                "end_date",
-                "first_time_check",
-                "last_time_check",
-            ]
-        ]
-        chunk = chunk[chunk['business_name'].str.len() <= 500]
-        chunk.drop_duplicates(inplace=True)
-
-        # Construct the insert statement with ON CONFLICT DO UPDATE
-        placeholders = ", ".join([f":{col}" for col in chunk.columns])
-
-        insert_sql = f"""
-        INSERT INTO {table_name} ({', '.join(chunk.columns)})
-        VALUES ({placeholders})
-        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
-        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
-        """
-
-        if chunk is not None and not chunk.empty:
-            with engine.begin() as connection:
-                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
-
-        pbar.update()
-
-
-
-### address processing
-
-# Specify the table and the primary key columns
-table_name = "registry_location"
-primary_key_columns = [
-    "identifier",
-    "address",
-    "city",
-    "state",
-]  # Composite primary key
-update_columns = ["last_time_check"]  # Columns to update in case of conflict
-
-
-used_columns = ["uuid", "address_en", "city", "region_code", "postal_code", "country_code", "lat", "lon", "address_type"]
-
-used_columns += valid_columns
-# Define the regex patterns
-usa_pattern = r"^\d{5}(-\d{4})?$"
-canada_pattern = r"^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$"
-
-with tqdm(total=total_chunks, desc="Processing location chunks") as pbar:
-    for chunk in tqdm(
-        pd.read_csv(
-            csv_path,
-            chunksize=chunk_size,
-            dtype="str",
-            usecols=used_columns,
-        ),
-        desc="Processing location chunks",
-    ):
-        # Add missing columns and fill with a default value if they don't exist
-        for col in desired_columns:
-            if col not in chunk.columns:
-                chunk[col] = ""  # Initialize with empty strings or NaN
-        chunk = chunk.copy()
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.fillna('', inplace=True)
-        chunk.rename(columns={'uuid':'identifier', 'address_en': 'address', 'region_code': 'state', 'postal_code': 'postal', 'country_code': 'country', "lon":"longitude", "lat":"latitude", "address_type":"location_type"}, inplace=True)
-        
-        chunk['city'] = chunk['city'].apply(lambda x: str(x).lower())
-        chunk["postal"] = chunk["postal"].apply(lambda x: str(x).replace(" ", ""))
-        chunk["postal"] = chunk.apply(
-            lambda row: row["postal"].replace(row["state"], ""), axis=1
-        )
-        chunk.loc[chunk["country"] == "USA", "postal"] = chunk.loc[
-            chunk["country"] == "USA", "postal"
-        ].apply(lambda x: x if bool(re.match(usa_pattern, x)) else "")
-        chunk.loc[chunk["country"] == "CAN", "postal"] = chunk.loc[
-            chunk["country"] == "CAN", "postal"
-        ].apply(lambda x: x[0:6])
-        chunk.loc[chunk["country"] == "CAN", "postal"] = chunk.loc[
-            chunk["country"] == "CAN", "postal"
-        ].apply(lambda x: x if bool(re.match(canada_pattern, x)) else "")
-        chunk["state"] = chunk["state"].apply(lambda x: x.upper()[0:2])
-        chunk.loc[chunk["latitude"] == "", "latitude"] = None
-        chunk.loc[chunk["longitude"] == "", "longitude"] = None
-        chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
-        chunk.loc[chunk['last_time_check'] == "", 'last_time_check'] = file_date
-        chunk = chunk[
-            [
-                "identifier",
-                "address",
-                "city",
-                "state",
-                "postal",
-                "country",
-                "longitude",
-                "latitude",
-                "location_type",
-                "first_time_check",
-                "last_time_check",
-            ]
-        ]
-        chunk = chunk[chunk['location_type']!='officer']
-        chunk.drop_duplicates(inplace=True)
-
-        # Construct the insert statement with ON CONFLICT DO UPDATE
-        placeholders = ", ".join([f":{col}" for col in chunk.columns])
-
-        insert_sql = f"""
-        INSERT INTO {table_name} ({', '.join(chunk.columns)})
-        VALUES ({placeholders})
-        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
-        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
-        """
-
-        if chunk is not None and not chunk.empty:
-            with engine.begin() as connection:
-                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
-
-        pbar.update()
