@@ -18,7 +18,6 @@ raw_directory = '/var/rel8ed.to/nfs/share/project_originals/files/files_cooked/'
 
 input_file_name = sys.argv[1]
 
-
 def column_exists(column_name, csv_path):
     try:
         with open(csv_path, 'r') as f:
@@ -50,53 +49,6 @@ available_columns = df.columns
 
 desired_columns = ['first_time_check', 'last_time_check']  # Replace with your column names
 valid_columns = [col for col in desired_columns if col in available_columns]
-
-
-### process gui search
-# Specify the table and the primary key columns
-table_name = "consolidated_search_gui"
-primary_key_columns = [
-    "identifier",
-    "business_name",
-]  # Composite primary key
-update_columns = ["search"]  # Columns to update in case of conflict
-
-with tqdm(total=total_chunks, desc="Processing search gui") as pbar:
-    for chunk in tqdm(
-        pd.read_csv(
-            csv_path,
-            chunksize=chunk_size,
-            dtype="str",
-            usecols=[
-                "uuid",
-                "business_name",
-                "business_name_en",
-            ],
-        ),
-        desc="Processing search gui",
-    ):
-        chunk = chunk.copy()
-        chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        chunk.rename(columns={'business_name_en': 'search', 'uuid':'identifier'}, inplace=True)
-        chunk = chunk[~chunk['search'].isna()]
-        chunk['search'] = chunk['search'].str.translate(translator)
-        chunk.drop_duplicates(inplace=True)
-
-        # Construct the insert statement with ON CONFLICT DO UPDATE
-        placeholders = ", ".join([f":{col}" for col in chunk.columns])
-
-        insert_sql = f"""
-        INSERT INTO {table_name} ({', '.join(chunk.columns)})
-        VALUES ({placeholders})
-        ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
-        {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
-        """
-
-        if chunk is not None and not chunk.empty:
-            with engine.begin() as connection:
-                connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
-
-        pbar.update()
 
 ### address processing
 
@@ -282,7 +234,7 @@ primary_key_columns = [
     "identifier",
     "business_name",
 ]  # Composite primary key
-update_columns = ["last_time_check"] 
+update_columns = ["last_time_check","business_name_en"] 
 
 used_columns = ["uuid", "business_name", "business_name_type", "business_name_en", "name_start_date", "name_end_date"]
 
@@ -317,6 +269,7 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
             [
                 "identifier",
                 "business_name",
+                "business_name_en",
                 "name_type",
                 "start_date",
                 "end_date",
@@ -368,7 +321,7 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         chunk.fillna("", inplace=True)
         chunk = chunk[chunk['alt_business_names_en'] != ""]
-        chunk.rename(columns={'uuid':'identifier','alt_business_names':'business_name', 'alt_business_names_type': 'name_type'}, inplace=True)
+        chunk.rename(columns={'uuid':'identifier','alt_business_names':'business_name', 'alt_business_names_en':'business_name_en', 'alt_business_names_type': 'name_type'}, inplace=True)
         chunk['start_date'] = None
         chunk['end_date'] = None
         chunk.loc[chunk['first_time_check'] == "", 'first_time_check'] = file_date
@@ -377,6 +330,7 @@ with tqdm(total=total_chunks, desc="Processing name chunks") as pbar:
             [
                 "identifier",
                 "business_name",
+                "business_name_en",
                 "name_type",
                 "start_date",
                 "end_date",
@@ -868,3 +822,50 @@ if alternative_column_exists:
 
 else:
     print("Alternative column does not exist in the CSV file. Skipping Alternative processing.")
+
+
+# ### process gui search
+# # Specify the table and the primary key columns
+# table_name = "consolidated_search_gui"
+# primary_key_columns = [
+#     "identifier",
+#     "business_name",
+# ]  # Composite primary key
+# update_columns = ["search"]  # Columns to update in case of conflict
+
+# with tqdm(total=total_chunks, desc="Processing search gui") as pbar:
+#     for chunk in tqdm(
+#         pd.read_csv(
+#             csv_path,
+#             chunksize=chunk_size,
+#             dtype="str",
+#             usecols=[
+#                 "uuid",
+#                 "business_name",
+#                 "business_name_en",
+#             ],
+#         ),
+#         desc="Processing search gui",
+#     ):
+#         chunk = chunk.copy()
+#         chunk = chunk.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+#         chunk.rename(columns={'business_name_en': 'search', 'uuid':'identifier'}, inplace=True)
+#         chunk = chunk[~chunk['search'].isna()]
+#         chunk['search'] = chunk['search'].str.translate(translator)
+#         chunk.drop_duplicates(inplace=True)
+
+#         # Construct the insert statement with ON CONFLICT DO UPDATE
+#         placeholders = ", ".join([f":{col}" for col in chunk.columns])
+
+#         insert_sql = f"""
+#         INSERT INTO {table_name} ({', '.join(chunk.columns)})
+#         VALUES ({placeholders})
+#         ON CONFLICT ({', '.join(primary_key_columns)}) DO UPDATE SET
+#         {', '.join([f"{col} = EXCLUDED.{col}" for col in update_columns])}
+#         """
+
+#         if chunk is not None and not chunk.empty:
+#             with engine.begin() as connection:
+#                 connection.execute(text(insert_sql), chunk.to_dict(orient="records"))
+
+#         pbar.update()
