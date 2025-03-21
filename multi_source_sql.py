@@ -5,8 +5,7 @@ from tqdm import tqdm
 connection_string = "postgresql://postgres:rel8edpg@10.8.0.110:5432/rel8ed"
 engine = create_engine(connection_string)
 
-csv_path = '/home/rli/2024delivery_coface.csv'
-
+csv_path = '/home/rli/kumi_match/kumi_meta_20250317.csv'
 chunk_size = 1000
 
 # Count the total number of rows in the CSV file (excluding the header)
@@ -19,10 +18,11 @@ if total_rows % chunk_size:
 
 
 # Specify the table and the primary key columns
-table_name = "multi_source"
+table_name = "consolidated_match"
 primary_key_columns = [
     "identifier_x",
     "identifier_y",
+    "version"
 ]  # Composite primary key
 
 with tqdm(total=total_chunks, desc="Processing") as pbar:
@@ -32,28 +32,18 @@ with tqdm(total=total_chunks, desc="Processing") as pbar:
             chunksize=chunk_size,
             dtype="str",
             usecols=[
-                "DUNS",
-                "EXPN",
                 "identifier_x",
                 "identifier_y",
+                "meta_score",
             ],
         ),
         desc="Processing",
     ):
         chunk = chunk.copy()
-        chunk.rename(columns={'DUNS':'id_x', 'EXPN':'id_y'}, inplace=True)
-        chunk['auth_x'] ='DNB'
-        chunk['auth_y'] ='EXPN'
-        chunk = chunk[
-            [
-                "identifier_x",
-                "id_x",
-                "auth_x",
-                "identifier_y",
-                "id_y",
-                "auth_y",
-            ]
-        ]
+        chunk['version'] = 'V0'
+        chunk['first_time_check'] = '2025-03-17'
+        chunk['last_time_check'] = '2025-03-17'
+        
         chunk.drop_duplicates(inplace=True)
 
         # Construct the insert statement with ON CONFLICT DO UPDATE
